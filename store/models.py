@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 
 # Create your models here.
@@ -17,10 +18,22 @@ class Employee(models.Model):
     street = models.CharField(max_length=50, help_text="Enter employee street")
     zip_code = models.CharField(max_length=9, help_text="Enter employee zip code")
 
+    def __str__(self):
+        return f"{self.empl_surname}, {self.empl_name}"
+
+    def get_absolute_url(self):
+        return reverse('employee-detail', args=[str(self.id_employee)])
+
 
 class Category(models.Model):
     category_number = models.AutoField(primary_key=True, help_text="Enter category id")
     category_name = models.CharField(max_length=50, help_text="Enter category name")
+
+    def __str__(self):
+        return self.category_name
+
+    def get_absolute_url(self):
+        return reverse('category-detail', args=[str(self.category_number)])
 
 
 class Product(models.Model):
@@ -28,6 +41,12 @@ class Product(models.Model):
     category_number = models.ForeignKey(Category, on_delete=models.DO_NOTHING, related_name="products")
     product_name = models.CharField(max_length=50, help_text="Enter product name")
     characteristics = models.TextField(max_length=100, help_text="Enter product characteristics")
+
+    def __str__(self):
+        return self.product_name
+
+    def get_absolute_url(self):
+        return reverse('product-detail', args=[str(self.id_product)])
 
 
 class Store_Product(models.Model):
@@ -40,17 +59,29 @@ class Store_Product(models.Model):
     products_number = models.IntegerField(help_text="Enter number of store products")
     promotional_product = models.BooleanField(help_text="Is store product on discount")
 
+    def __str__(self):
+        return self.UPC
+
+    def get_absolute_url(self):
+        return reverse('store-product-details', args=[str(self.UPC)])
+
 
 class Customer_Card(models.Model):
     card_number = models.CharField(max_length=13, primary_key=True, help_text="Enter customer card number")
     cust_surname = models.CharField(max_length=50, help_text="Enter customer surname")
     cust_name = models.CharField(max_length=50, help_text="Enter customer name")
-    cust_patronymic = models.CharField(max_length=50, null=True,  help_text="Enter customer patronymic")
+    cust_patronymic = models.CharField(max_length=50, null=True, help_text="Enter customer patronymic")
     phone_number = models.CharField(max_length=13, help_text="Enter customer phone number")
     city = models.CharField(max_length=50, null=True, help_text="Enter customer city")
     street = models.CharField(max_length=50, null=True, help_text="Enter customer street")
     zip_code = models.CharField(max_length=9, null=True, help_text="Enter customer zip code")
     percent = models.IntegerField(help_text="Enter customer discount")
+
+    def __str__(self):
+        return self.card_number
+
+    def get_absolute_url(self):
+        return reverse('card-number-details', args=[str(self.card_number)])
 
 
 class Check(models.Model):
@@ -64,6 +95,12 @@ class Check(models.Model):
     sum_total = models.DecimalField(max_digits=13, decimal_places=4, help_text="Enter receipt's total sum")
     vat = models.DecimalField(max_digits=13, decimal_places=4, help_text="Enter receipt's vat")
 
+    def __str__(self):
+        return self.check_number
+
+    def get_absolute_url(self):
+        return reverse('check-details', args=[str(self.check_number)])
+
 
 class Sale(models.Model):
     UPC = models.ForeignKey(Store_Product, on_delete=models.DO_NOTHING, related_name="sold",
@@ -72,3 +109,9 @@ class Sale(models.Model):
                                      related_name="products", help_text="Enter number of receipt")
     product_number = models.IntegerField(help_text="Enter number of units sold")
     selling_price = models.DecimalField(max_digits=13, decimal_places=4, help_text="Enter selling price per unit")
+
+    def __str__(self):
+        return f"{self.UPC}, {self.check_number}"
+
+    def get_absolute_url(self):
+        return reverse('sale-details', args=[str(self.UPC), str(self.check_number)])

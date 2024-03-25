@@ -1,0 +1,28 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static "app.css" %}">
+    {% block css_files %}{% endblock %}
+</head>
+<body>
+<header id="navigation-bar">
+    <h1><a href="{% url  'product_list' %}">Zлагода</a></h1>
+    <nav>
+        <ul>
+            <li><a href="{% url 'employee_list' %}"></a></li>
+            <li><a href="{% url 'client_list' %}"></a></li>
+            <li><a href="{% url 'category_list' %}"></a></li>
+            <li><a href="{% url 'product_list' %}"></a></li>
+            <li><a href="{% url 'store_product_list' %}"></a></li>
+            <li><a href="{% url 'check_list' %}"></a></li>
+        </ul>
+    </nav>
+</header>
+{% block content %}{% endblock %}
+</body>
+

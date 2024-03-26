@@ -11,18 +11,19 @@
 </head>
 <body>
 <header id="navigation-bar">
-    <h1><a href="{% url  'product_list' %}">Zлагода</a></h1>
+    <h1><a href="{% url 'product_list' %}">Zлагода</a></h1>
     <nav>
         <ul>
-            <li><a href="{% url 'employee_list' %}"></a></li>
-            <li><a href="{% url 'client_list' %}"></a></li>
-            <li><a href="{% url 'category_list' %}"></a></li>
-            <li><a href="{% url 'product_list' %}"></a></li>
-            <li><a href="{% url 'store_product_list' %}"></a></li>
-            <li><a href="{% url 'check_list' %}"></a></li>
+            <li><a href="{% url 'employee_list' %}">Employee</a></li>
+            <li><a href="{% url 'client_list' %}">Client</a></li>
+            <li><a href="{% url 'category_list' %}">Category</a></li>
+            <li><a href="{% url 'product_list' %}">Products</a></li>
+            <li><a href="{% url 'store_product_list' %}">Store Products</a></li>
+            <li><a href="{% url 'check_list' %}">Checks</a></li>
         </ul>
     </nav>
 </header>
+
 {% block content %}{% endblock %}
 </body>
 

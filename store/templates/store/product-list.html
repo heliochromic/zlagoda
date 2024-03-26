@@ -12,11 +12,11 @@
 {% block content %}
     <section id="all-products">
         <form method="GET" action="{% url 'product_list' %}">
-            <label for="search">Product Name:</label>
-            {{ form.search }}
+            <label for="product_name">Product Name:</label>
+            {{ form.product_name }}
 
-            <label for="category">Category:</label>
-            {{ form.category }}
+            <label for="category_name">Category:</label>
+            {{ form.category_name }}
 
             <button type="submit">Filter</button>
         </form>

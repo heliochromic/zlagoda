@@ -54,45 +54,40 @@ class ProductListView(View):
     def get(self, request):
         form = ProductFilterForm(request.GET)
 
-        if form.is_valid():
-
-            product_name = form.cleaned_data.get('search')
-            selected_category = form.cleaned_data.get('category')
-
-            print(f"""
-
-            ТИ ДЕБІЛ
-            {product_name} 
-            {selected_category} 
-
-
-            """)
-            query = f'''
-                SELECT p.id_product, p.product_name, p.characteristics, c.category_name
-                FROM store_product AS p
-                INNER JOIN store_category AS c ON p.category_number_id = c.category_number
-                WHERE c.category_name = %s
-                OR p.product_name LIKE %s
+        query = '''
+            SELECT p.id_product, p.product_name, p.characteristics, c.category_name
+            FROM store_product AS p
+            INNER JOIN store_category AS c ON p.category_number_id = c.category_number
             '''
-            products = Product.objects.raw(query, [selected_category, f'{product_name}%'])
+
+        if form.is_valid():
+            product_name = form.cleaned_data.get('product_name')
+            selected_category = form.cleaned_data.get('category_name')
+
+            query_params = []
+
+            if selected_category:
+                query += 'WHERE c.category_name = %s '
+                query_params.append(selected_category.category_name)
+
+            if product_name:
+                if selected_category:
+                    query += 'AND p.product_name LIKE %s'
+                else:
+                    query += 'WHERE LOWER(p.product_name) ILIKE LOWER(%s)'
+                query_params.append(f'{product_name}%')
+
+            products = Product.objects.raw(query, query_params)
 
         else:
-            query = f'''
-                SELECT p.id_product, p.product_name, p.characteristics, c.category_name
-                FROM store_product AS p
-                INNER JOIN store_category AS c ON p.category_number_id = c.category_number
-            '''
             products = Product.objects.raw(query)
 
-        print(products.query)
+        # print(products.query)
 
         return render(request, template_name=self.template_name, context={
             'form': form,
             'products': products
         })
-
-    def post(self, request):
-        pass
 
 
 class ProductCreateView(View):

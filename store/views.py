@@ -1,9 +1,11 @@
+from django.db import connection
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
-from django.db import connection
+from django.contrib import messages
+from django.urls import reverse_lazy
 
 from .models import Employee, Category, Product, Store_Product, Customer_Card, Check, Sale
-from .forms import ProductFilterForm
+from .forms import ProductFilterForm, ProductAddForm
 
 
 # Create your views here.
@@ -72,17 +74,21 @@ class ProductListView(View):
 
             if product_name:
                 if selected_category:
-                    query += 'AND p.product_name LIKE %s'
+                    query += 'AND p.product_name ILIKE %s'
                 else:
-                    query += 'WHERE LOWER(p.product_name) ILIKE LOWER(%s)'
-                query_params.append(f'{product_name}%')
+                    query += 'WHERE p.product_name ILIKE %s'
+                query_params.append(f'%{product_name}%')
 
-            products = Product.objects.raw(query, query_params)
+            with connection.cursor() as cursor:
+                cursor.execute(query, query_params)
+                products = cursor.fetchall()
 
         else:
-            products = Product.objects.raw(query)
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                products = cursor.fetchall()
 
-        # print(products.query)
+        print(products)
 
         return render(request, template_name=self.template_name, context={
             'form': form,
@@ -91,7 +97,35 @@ class ProductListView(View):
 
 
 class ProductCreateView(View):
-    pass
+    template_name = 'store/product-add.html'
+    success_url = reverse_lazy('product_list')  # Assuming 'product_list' is the name of your product list URL
+
+    def get(self, request):
+        return render(request, template_name=self.template_name, context={
+            'form': ProductAddForm()
+        })
+
+    def post(self, request):
+        form = ProductAddForm(request.POST)
+        if form.is_valid():
+            selected_category = form.cleaned_data.get('category')
+            selected_product_name = form.cleaned_data.get('product_name')
+            selected_characteristics = form.cleaned_data.get('characteristics')
+
+            insert = """
+                INSERT INTO store_product (product_name, characteristics, category_number_id) VALUES (%s, %s, %s);
+            """
+
+            with connection.cursor() as cursor:
+                cursor.execute(insert,
+                               [selected_product_name, selected_characteristics, selected_category.category_number])
+
+            messages.success(request, 'Product added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form
+            })
 
 
 class ProductUpdateView(View):

@@ -18,8 +18,13 @@
             <label for="category_name">Category:</label>
             {{ form.category_name }}
 
-            <button type="submit">Filter</button>
+            <button type="submit" class="filter-button">Filter</button>
         </form>
+        <a href="{% url 'product_add' %}">
+            <div class="add-button">
+                Add Product
+            </div>
+        </a>
         <table>
             <thead>
             <tr>
@@ -32,10 +37,14 @@
             <tbody>
             {% for product in products %}
                 <tr>
-                    <td>{{ product.id_product }}</td>
-                    <td>{{ product.product_name }}</td>
-                    <td>{{ product.characteristics }}</td>
-                    <td>{{ product.category_name }}</td>
+                    <td>{{ product.0 }}</td>
+                    <td>{{ product.1 }}</td>
+                    <td>{{ product.2 }}</td>
+                    <td>{{ product.3 }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No products found</td>
                 </tr>
             {% endfor %}
             </tbody>

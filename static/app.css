@@ -1,14 +1,26 @@
+/* Imports*/
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@500&family=Oswald:wght@300&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+/* Global Styles */
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
+    font-family: 'Helvetica';
+    font-weight: lighter;
 }
 
 body {
-  margin: 0;
+    margin: 0;
 }
 
 a {
     text-decoration: none;
     color: inherit;
+}
+
+/* Navigation Bar */
+#all-products {
+    width: 70%;
+    margin: 0 auto;
 }
 
 #navigation-bar {
@@ -41,4 +53,114 @@ a {
 
 #navigation-bar nav ul li:last-child {
     margin-right: 0;
+}
+
+/* Form Styles */
+form {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    align-items: center;
+}
+
+form label {
+    flex: 1;
+    text-align: center;
+}
+
+form input[type="text"],
+form select {
+    flex: 3;
+    padding: 12px;
+}
+
+form button[type="submit"] {
+    flex: 1;
+    margin: 0 0 0 20px;
+}
+
+/* Button Styles */
+.add-button,
+.filter-button {
+    background-color: #13aa52;
+    border: 2px solid #13aa52;
+    border-radius: 4px;
+    box-shadow: rgba(0, 0, 0, .1) 0 2px 4px 0;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 400;
+    outline: none;
+    padding: 10px 25px;
+    text-align: center;
+    transform: translateY(0);
+    transition: transform 150ms, box-shadow 150ms;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    margin: 20px 0;
+}
+
+.filter-button {
+    background-color: #176bcb;
+    border: 2px solid #176bcb;
+}
+
+.add-button:hover,
+.filter-button:hover {
+    box-shadow: rgba(0, 0, 0, .15) 0 3px 9px 0;
+    transform: translateY(-2px);
+}
+
+@media (min-width: 768px) {
+    .add-button {
+        padding: 10px 30px;
+    }
+}
+
+@media (max-width: 710px) {
+    form button[type="submit"] {
+        margin: 20px 0 0 0;
+    }
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 50px;
+}
+
+thead th {
+    background-color: #f2f2f2;
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+tbody td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.add-form label {
+    display: inline-block;
+    width: 120px; /* Adjust width as needed */
+    margin-right: 10px; /* Add spacing between label and input */
+}
+
+.add-form input[type="text"],
+.add-form select {
+    width: 200px; /* Adjust width as needed */
+    margin-bottom: 10px; /* Add spacing between inputs */
+}
+
+.add-form .button {
+    margin-left: 120px; /* Match the width of the label to align the button */
 }

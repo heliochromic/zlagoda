@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Employee
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <form method="POST" action="{% url 'employee_add' %}">
+        {% csrf_token %}
+         {{ form.as_p }}
+        <button type="submit" class="add-button">Add</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    All Employees
+{% endblock %}
+
+{% block css_files %}
+
+{% endblock %}
+
+{% block content %}
+    <section id="all-employees">
+        <form method="GET" action="{% url 'employee_list' %}">
+            <label for="employee_name">Employee Name:</label>
+            {{ form.employee_name }}
+
+            <label for="employee_role">Role:</label>
+            {{ form.employee_role }}
+
+            <button type="submit" class="filter-button">Filter</button>
+        </form>
+        <a href="{% url 'employee_add' %}">
+            <div class="add-button">
+                Add Employee
+            </div>
+        </a>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Employee Name</th>
+                <th>Role</th>
+                <th>Phone Number</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for employee in employees %}
+                <tr>
+                    <td>{{ employee.0 }}</td>
+                    <td>{{ employee.1 }}</td>
+                    <td>{{ employee.2 }}</td>
+                    <td>{{ employee.3 }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No employees found</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

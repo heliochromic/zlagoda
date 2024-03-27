@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from .models import Employee, Category, Product, Store_Product, Customer_Card, Check, Sale
-from .forms import ProductFilterForm, ProductAddForm
+from .forms import ProductFilterForm, ProductAddForm, EmployeeFilterForm, EmployeeAddForm
 
 
 # Create your views here.
@@ -15,11 +15,101 @@ def index(request):
 
 
 class EmployeeListView(View):
-    pass
+    template_name = 'store/employee-list.html'
+
+    def get(self, request):
+        form = EmployeeFilterForm(request.GET)
+
+        query = '''
+                    SELECT id_employee, CONCAT(empl_surname, ' ',empl_name) AS full_name, empl_role, phone_number
+                    FROM store_employee 
+                '''
+
+        if form.is_valid():
+            empl_name = form.cleaned_data.get('employee_name')
+            selected_role = form.cleaned_data.get('employee_role')
+
+            query_params = []
+
+            if selected_role:
+                query += 'WHERE empl_role = %s '
+                print("This role ", selected_role)
+                query_params.append(selected_role)
+
+            if empl_name:
+                if selected_role:
+                    query += 'AND CONCAT(empl_surname, \' \', empl_name) ILIKE %s'
+                else:
+                    query += 'WHERE CONCAT(empl_surname, \' \', empl_name) ILIKE %s'
+                query_params.append(f'%{empl_name}%')
+
+            with connection.cursor() as cursor:
+                query += 'ORDER BY 2'
+                cursor.execute(query, query_params)
+                employees = cursor.fetchall()
+
+        else:
+            with connection.cursor() as cursor:
+                query += 'ORDER BY 2'
+                cursor.execute(query)
+                employees = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'employees': employees
+        })
 
 
 class EmployeeCreateView(View):
-    pass
+    template_name = 'store/employee-add.html'
+    success_url = reverse_lazy('employee_list')  # Assuming 'product_list' is the name of your product list URL
+
+    def get(self, request):
+        return render(request, template_name=self.template_name, context={
+            'form': EmployeeAddForm()
+        })
+
+    def post(self, request):
+        form = EmployeeAddForm(request.POST)
+        if form.is_valid():
+            params = list()
+            selected_id = form.cleaned_data.get("employee_id")
+            params.append(selected_id)
+            selected_surname = form.cleaned_data.get('employee_surname')
+            params.append(selected_surname)
+            selected_name = form.cleaned_data.get('employee_name')
+            params.append(selected_name)
+            selected_patronymic = form.cleaned_data.get('employee_patronymic')
+            params.append(selected_patronymic)
+            selected_role = form.cleaned_data.get('employee_role')
+            params.append(selected_role)
+            selected_salary = form.cleaned_data.get('salary')
+            params.append(selected_salary)
+            selected_date_of_birth = form.cleaned_data.get('date_of_birth')
+            params.append(selected_date_of_birth)
+            selected_date_of_start = form.cleaned_data.get('date_of_start')
+            params.append(selected_date_of_start)
+            selected_phone_number = form.cleaned_data.get('phone_number')
+            params.append(selected_phone_number)
+            selected_city = form.cleaned_data.get('city')
+            params.append(selected_city)
+            selected_street = form.cleaned_data.get('street')
+            params.append(selected_street)
+            selected_zipcode = form.cleaned_data.get('zip_code')
+            params.append(selected_zipcode)
+            insert = """
+                   INSERT INTO store_employee VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+               """
+            with connection.cursor() as cursor:
+                cursor.execute(insert,
+                               params)
+
+            messages.success(request, 'Product added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form
+            })
 
 
 class EmployeeUpdateView(View):

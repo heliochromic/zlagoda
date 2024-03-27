@@ -21,7 +21,8 @@ class EmployeeListView(View):
         form = EmployeeFilterForm(request.GET)
 
         query = '''
-                    SELECT id_employee, CONCAT(empl_surname, ' ',empl_name) AS full_name, empl_role, phone_number
+                    SELECT id_employee, CONCAT(empl_surname, ' ',empl_name) AS full_name, empl_role, phone_number, 
+                    CONCAT(street, ', ', city, ' ', zip_code) as address
                     FROM store_employee 
                 '''
 

@@ -34,24 +34,52 @@ class EmployeeFilterForm(forms.Form):
 
 
 class EmployeeAddForm(forms.Form):
-    employee_id = forms.CharField(max_length=10, help_text="Enter employee id")
+    id_employee = forms.CharField(max_length=10, help_text="Enter employee id")
     employee_name = forms.CharField(max_length=50, help_text="Enter employee name")
     employee_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
     employee_patronymic = forms.CharField(max_length=50, required=False,
                                           help_text="Enter patronymic")
     employee_role = forms.CharField(max_length=10, help_text="Enter employee role")
-    salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
-    date_of_birth = forms.DateField(help_text="Enter employee date of birth")
-    date_of_start = forms.DateField(help_text="Enter date of employee work started")
-    phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
+    employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
+    employee_date_of_birth = forms.DateField(help_text="Enter employee date of birth",
+                                    widget=forms.DateInput(attrs={'type': 'date'}))
+    employee_date_of_start = forms.DateField(help_text="Enter date of employee work started",
+                                    widget=forms.DateInput(attrs={'type': 'date'}))
+    employee_phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
 
     def clean_phone_number(self):
-        phone_number = self.cleaned_data['phone_number']
+        employee_phone_number = self.cleaned_data['phone_number']
         phone_number_pattern = r'^\+?1?\d{9,15}$'
-        if not re.match(phone_number_pattern, phone_number):
+        if not re.match(phone_number_pattern, employee_phone_number):
             raise forms.ValidationError("Please enter a valid phone number.")
-        return phone_number
+        return employee_phone_number
 
-    city = forms.CharField(max_length=50, help_text="Enter employee city")
-    street = forms.CharField(max_length=50, help_text="Enter employee street")
-    zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code")
+    employee_city = forms.CharField(max_length=50, help_text="Enter employee city")
+    employee_street = forms.CharField(max_length=50, help_text="Enter employee street")
+    employee_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code")
+
+
+class EmployeeEditForm(forms.Form):
+    id_employee = forms.CharField(max_length=10, help_text="Enter employee id")
+    employee_name = forms.CharField(max_length=50, help_text="Enter employee name")
+    employee_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
+    employee_patronymic = forms.CharField(max_length=50, required=False,
+                                          help_text="Enter patronymic")
+    employee_role = forms.CharField(max_length=10, help_text="Enter employee role")
+    employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
+    employee_date_of_birth = forms.DateField(help_text="Enter employee date of birth",
+                                    widget=forms.DateInput(attrs={'type': 'date'}))
+    employee_date_of_start = forms.DateField(help_text="Enter date of employee work started",
+                                    widget=forms.DateInput(attrs={'type': 'date'}))
+    employee_phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
+
+    def clean_phone_number(self):
+        employee_phone_number = self.cleaned_data['phone_number']
+        phone_number_pattern = r'^\+?1?\d{9,15}$'
+        if not re.match(phone_number_pattern, employee_phone_number):
+            raise forms.ValidationError("Please enter a valid phone number.")
+        return employee_phone_number
+
+    employee_city = forms.CharField(max_length=50, help_text="Enter employee city")
+    employee_street = forms.CharField(max_length=50, help_text="Enter employee street")
+    employee_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code")

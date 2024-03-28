@@ -12,8 +12,8 @@
 {% block content %}
 <form method="POST" action="{% url 'employee_add' %}">
     {% csrf_token %}
-    <label for="employee_id">Employee ID:</label>
-    {{ form.employee_id }}
+    <label for="id_employee">Employee ID:</label>
+    {{ form.id_employee }}
 
     <label for="employee_name">Employee Name:</label>
     {{ form.employee_name }}
@@ -27,26 +27,26 @@
     <label for="employee_role">Employee Role:</label>
     {{ form.employee_role }}
 
-    <label for="salary">Salary:</label>
-    {{ form.salary }}
+    <label for="employee_salary">Salary:</label>
+    {{ form.employee_salary }}
 
-    <label for="date_of_birth">Date of Birth:</label>
-    {{ form.date_of_birth }}
+    <label for="employee_date_of_birth">Date of Birth:</label>
+    {{ form.employee_date_of_birth }}
 
-    <label for="date_of_start">Date of Employment:</label>
-    {{ form.date_of_start }}
+    <label for="employee_date_of_start">Date of Employment:</label>
+    {{ form.employee_date_of_start }}
 
-    <label for="phone_number">Phone Number:</label>
-    {{ form.phone_number }}
+    <label for="employee_phone_number">Phone Number:</label>
+    {{ form.employee_phone_number }}
 
-    <label for="city">City:</label>
-    {{ form.city }}
+    <label for="employee_city">City:</label>
+    {{ form.employee_city }}
 
-    <label for="street">Street:</label>
-    {{ form.street }}
+    <label for="employee_street">Street:</label>
+    {{ form.employee_street }}
 
-    <label for="zip_code">Zip Code:</label>
-    {{ form.zip_code }}
+    <label for="employee_zip_code">Zip Code:</label>
+    {{ form.employee_zip_code }}
 
     <button type="submit" class="add-button">Add</button>
 </form>

@@ -37,7 +37,7 @@
             </thead>
             <tbody>
             {% for employee in employees %}
-                <tr>
+                <tr style="cursor:pointer;" onclick="window.location='{% url 'employee-detail' pk=employee.0 %}'">
                     <td>{{ employee.0 }}</td>
                     <td>{{ employee.1 }}</td>
                     <td>{{ employee.2 }}</td>

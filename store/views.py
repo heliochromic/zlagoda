@@ -5,7 +5,8 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from .models import Employee, Category, Product, Store_Product, Customer_Card, Check, Sale
-from .forms import ProductFilterForm, ProductAddForm, ProductEditForm, EmployeeFilterForm, EmployeeAddForm
+from .forms import ProductFilterForm, ProductAddForm, ProductEditForm, EmployeeFilterForm, EmployeeAddForm, \
+    EmployeeEditForm
 
 
 # Create your views here.
@@ -74,7 +75,7 @@ class EmployeeCreateView(View):
         form = EmployeeAddForm(request.POST)
         if form.is_valid():
             params = []
-            selected_id = form.cleaned_data.get("employee_id")
+            selected_id = form.cleaned_data.get("id_employee")
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('employee_surname')
             params.append(selected_surname)
@@ -84,19 +85,19 @@ class EmployeeCreateView(View):
             params.append(selected_patronymic)
             selected_role = form.cleaned_data.get('employee_role')
             params.append(selected_role)
-            selected_salary = form.cleaned_data.get('salary')
+            selected_salary = form.cleaned_data.get('employee_salary')
             params.append(selected_salary)
-            selected_date_of_birth = form.cleaned_data.get('date_of_birth')
+            selected_date_of_birth = form.cleaned_data.get('employee_date_of_birth')
             params.append(selected_date_of_birth)
-            selected_date_of_start = form.cleaned_data.get('date_of_start')
+            selected_date_of_start = form.cleaned_data.get('employee_date_of_start')
             params.append(selected_date_of_start)
-            selected_phone_number = form.cleaned_data.get('phone_number')
+            selected_phone_number = form.cleaned_data.get('employee_phone_number')
             params.append(selected_phone_number)
-            selected_city = form.cleaned_data.get('city')
+            selected_city = form.cleaned_data.get('employee_city')
             params.append(selected_city)
-            selected_street = form.cleaned_data.get('street')
+            selected_street = form.cleaned_data.get('employee_street')
             params.append(selected_street)
-            selected_zipcode = form.cleaned_data.get('zip_code')
+            selected_zipcode = form.cleaned_data.get('employee_zip_code')
             params.append(selected_zipcode)
             insert = """
                    INSERT INTO store_employee VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
@@ -113,8 +114,113 @@ class EmployeeCreateView(View):
             })
 
 
-class EmployeeUpdateView(View):
-    pass
+class EmployeeDetailView(View):
+    template_name = 'store/employee-detail.html'
+    success_url = reverse_lazy('employee_list')
+
+    def get(self, request, pk):
+        query = '''
+            SELECT * FROM store_employee WHERE id_employee = %s
+            '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            employee = cursor.fetchall()
+
+        (id_employee, employee_surname
+         , employee_name, employee_patronymic, employee_role
+         , employee_salary, employee_date_of_birth
+         , employee_date_of_start, employee_phone_number
+         , employee_city, employee_street, employee_zip_code) = (employee[0][0], employee[0][1]
+                                                                 , employee[0][2], employee[0][3], employee[0][4]
+                                                                 , employee[0][5], employee[0][6]
+                                                                 , employee[0][7], employee[0][8], employee[0][9]
+                                                                 , employee[0][10], employee[0][11])
+
+        form = EmployeeEditForm(initial={
+            'id_employee': id_employee,
+            'employee_surname': employee_surname,
+            'employee_name': employee_name,
+            'employee_patronymic': employee_patronymic,
+            'employee_role': employee_role,
+            'employee_salary': employee_salary,
+            'employee_date_of_birth': employee_date_of_birth,
+            'employee_date_of_start': employee_date_of_start,
+            'employee_phone_number': employee_phone_number,
+            'employee_city': employee_city,
+            'employee_street': employee_street,
+            'employee_zip_code': employee_zip_code
+        })
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'pk': pk,
+        })
+
+    def post(self, request, pk):
+        if request.POST.get('action') == 'delete':
+            return self.delete_employee(request, pk)
+        else:
+            return self.update_employee(request, pk)
+
+    def delete_employee(self, request, pk):
+        delete = 'DELETE FROM store_employee WHERE id_employee = %s'
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete, [pk])
+
+        messages.success(request, 'Employee deleted successfully')
+        return redirect(self.success_url)
+
+    def update_employee(self, request, pk):
+        form = EmployeeEditForm(request.POST)
+        print(form.errors)
+        if form.is_valid():
+            params = []
+            selected_id = form.cleaned_data.get("id_employee")
+            params.append(selected_id)
+            selected_surname = form.cleaned_data.get('employee_surname')
+            params.append(selected_surname)
+            selected_name = form.cleaned_data.get('employee_name')
+            params.append(selected_name)
+            selected_patronymic = form.cleaned_data.get('employee_patronymic')
+            params.append(selected_patronymic)
+            selected_role = form.cleaned_data.get('employee_role')
+            params.append(selected_role)
+            selected_salary = form.cleaned_data.get('employee_salary')
+            params.append(selected_salary)
+            selected_date_of_birth = form.cleaned_data.get('employee_date_of_birth')
+            params.append(selected_date_of_birth)
+            selected_date_of_start = form.cleaned_data.get('employee_date_of_start')
+            params.append(selected_date_of_start)
+            selected_phone_number = form.cleaned_data.get('employee_phone_number')
+            params.append(selected_phone_number)
+            selected_city = form.cleaned_data.get('employee_city')
+            params.append(selected_city)
+            selected_street = form.cleaned_data.get('employee_street')
+            params.append(selected_street)
+            selected_zipcode = form.cleaned_data.get('employee_zip_code')
+            params.append(selected_zipcode)
+            params.append(pk)
+
+            update = '''
+                UPDATE store_employee
+                SET id_employee = %s, empl_surname = %s, empl_name = %s,
+                    empl_patronymic = %s, empl_role = %s, salary = %s,
+                    date_of_birth = %s, date_of_start = %s, phone_number = %s,
+                    city = %s, street = %s, zip_code = %s
+                WHERE id_employee = %s
+                '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(update, params)
+
+            messages.success(request, 'Employee updated successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk
+            })
 
 
 class ClientListView(View):

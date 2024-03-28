@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Product
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <form method="POST" action="{% url 'employee-detail' pk=pk %}">
+        {% csrf_token %}
+        <label for="id_employee">Employee Id:</label>
+        {{ form.id_employee }}
+
+        <label for="employee_surname">Employee Surname:</label>
+        {{ form.employee_surname }}
+
+        <label for="employee_name">Employee Name:</label>
+        {{ form.employee_name }}
+
+        <label for="employee_patronymic">Employee Patronymic:</label>
+        {{ form.employee_patronymic }}
+
+        <label for="employee_role">Employee Role:</label>
+        {{ form.employee_role }}
+
+        <label for="employee_salary">Employee Salary:</label>
+        {{ form.employee_salary }}
+
+        <label for="employee_date_of_birth">Employee Date of Birth:</label>
+        {{ form.employee_date_of_birth }}
+
+        <label for="employee_date_of_start">Employee Date of Start:</label>
+        {{ form.employee_date_of_start }}
+
+        <label for="employee_phone_number">Employee Phone Number:</label>
+        {{ form.employee_phone_number }}
+
+        <label for="employee_city">Employee City:</label>
+        {{ form.employee_city }}
+
+        <label for="employee_street">Employee Street:</label>
+        {{ form.employee_street }}
+
+        <label for="employee_zip_code">Employee Zip Code:</label>
+        {{ form.employee_zip_code }}
+
+        <button type="submit" class="button edit-btn">Edit</button>
+    </form>
+    <form method="POST" action="{% url 'employee-detail' pk=pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="button delete-btn">Delete</button>
+    </form>
+{% endblock %}

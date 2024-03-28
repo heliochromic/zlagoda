@@ -8,7 +8,7 @@ urlpatterns = [
     # For employee URLs
     path('employee/', views.EmployeeListView.as_view(), name='employee_list'),
     path('employee/add/', views.EmployeeCreateView.as_view(), name='employee_add'),
-    path('employee/<int:pk>', views.EmployeeUpdateView.as_view(), name='employee-detail'),
+    path('employee/<str:pk>', views.EmployeeDetailView.as_view(), name='employee-detail'),
 
     # For clients URLs
     path('clients/', views.ClientListView.as_view(), name='client_list'),

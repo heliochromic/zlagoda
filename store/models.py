@@ -80,7 +80,7 @@ class Customer_Card(models.Model):
         return self.card_number
 
     def get_absolute_url(self):
-        return reverse('card-number-details', args=[str(self.card_number)])
+        return reverse('client-details', args=[str(self.card_number)])
 
 
 class Check(models.Model):

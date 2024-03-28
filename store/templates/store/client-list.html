@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    All Employees
+{% endblock %}
+
+{% block css_files %}
+
+{% endblock %}
+
+{% block content %}
+    <section id="all-clients">
+        <form method="GET" action="{% url 'client_list' %}">
+            <label for="client_name">Client Name:</label>
+            {{ form.client_name }}
+
+            <label for="client_discount">Discount:</label>
+            {{ form.client_discount }}
+
+            <button type="submit" class="filter-button">Filter</button>
+        </form>
+        <a href="{% url 'client_add' %}">
+            <div class="add-button">
+                Add Client
+            </div>
+        </a>
+        <table>
+            <thead>
+            <tr>
+                <th>Card ID</th>
+                <th>Client Name</th>
+                <th>Phone Number</th>
+                <th>Address</th>
+                <th>Discount</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for client in clients %}
+                <tr style="cursor:pointer;" onclick="window.location='{% url 'client-details' pk=client.0 %}'">
+                    <td>{{ client.0 }}</td>
+                    <td>{{ client.1 }}</td>
+                    <td>{{ client.2 }}</td>
+                    <td>{{ client.3 }}</td>
+                    <td>{{ client.4 }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No clients found</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

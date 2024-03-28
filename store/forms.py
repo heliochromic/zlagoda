@@ -33,7 +33,7 @@ class EmployeeFilterForm(forms.Form):
     employee_role = forms.ChoiceField(choices=empl_role_choices, required=False)
 
 
-class EmployeeAddForm(forms.Form):
+class EmployeeDetailForm(forms.Form):
     id_employee = forms.CharField(max_length=10, help_text="Enter employee id")
     employee_name = forms.CharField(max_length=50, help_text="Enter employee name")
     employee_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
@@ -59,19 +59,17 @@ class EmployeeAddForm(forms.Form):
     employee_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code")
 
 
-class EmployeeEditForm(forms.Form):
-    id_employee = forms.CharField(max_length=10, help_text="Enter employee id")
-    employee_name = forms.CharField(max_length=50, help_text="Enter employee name")
-    employee_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
-    employee_patronymic = forms.CharField(max_length=50, required=False,
-                                          help_text="Enter patronymic")
-    employee_role = forms.CharField(max_length=10, help_text="Enter employee role")
-    employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
-    employee_date_of_birth = forms.DateField(help_text="Enter employee date of birth",
-                                    widget=forms.DateInput(attrs={'type': 'date'}))
-    employee_date_of_start = forms.DateField(help_text="Enter date of employee work started",
-                                    widget=forms.DateInput(attrs={'type': 'date'}))
-    employee_phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
+class ClientFilterForm(forms.Form):
+    client_name = forms.CharField(label='Search', max_length=100, required=False)
+    client_discount = forms.IntegerField(help_text="Enter percent of discount", required=False)
+
+
+class ClientDetailForm(forms.Form):
+    card_number = forms.CharField(max_length=10, help_text="Enter employee id")
+    cust_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
+    cust_name = forms.CharField(max_length=50, help_text="Enter employee name")
+    cust_patronymic = forms.CharField(max_length=50, required=False, help_text="Enter patronymic")
+    customer_phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
 
     def clean_phone_number(self):
         employee_phone_number = self.cleaned_data['phone_number']
@@ -80,6 +78,7 @@ class EmployeeEditForm(forms.Form):
             raise forms.ValidationError("Please enter a valid phone number.")
         return employee_phone_number
 
-    employee_city = forms.CharField(max_length=50, help_text="Enter employee city")
-    employee_street = forms.CharField(max_length=50, help_text="Enter employee street")
-    employee_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code")
+    customer_city = forms.CharField(max_length=50, help_text="Enter employee city", required=False)
+    customer_street = forms.CharField(max_length=50, help_text="Enter employee street", required=False)
+    customer_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code", required=False)
+    customer_discount_percent = forms.IntegerField(help_text="Enter percent of discount", required=False)

@@ -5,8 +5,8 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from .models import Employee, Category, Product, Store_Product, Customer_Card, Check, Sale
-from .forms import ProductFilterForm, ProductAddForm, ProductEditForm, EmployeeFilterForm, EmployeeAddForm, \
-    EmployeeEditForm
+from .forms import ProductFilterForm, ProductAddForm, ProductEditForm, EmployeeFilterForm, EmployeeDetailForm, \
+    ClientFilterForm, ClientDetailForm
 
 
 # Create your views here.
@@ -68,11 +68,11 @@ class EmployeeCreateView(View):
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
-            'form': EmployeeAddForm()
+            'form': EmployeeDetailForm()
         })
 
     def post(self, request):
-        form = EmployeeAddForm(request.POST)
+        form = EmployeeDetailForm(request.POST)
         if form.is_valid():
             params = []
             selected_id = form.cleaned_data.get("id_employee")
@@ -136,7 +136,7 @@ class EmployeeDetailView(View):
                                                                  , employee[0][7], employee[0][8], employee[0][9]
                                                                  , employee[0][10], employee[0][11])
 
-        form = EmployeeEditForm(initial={
+        form = EmployeeDetailForm(initial={
             'id_employee': id_employee,
             'employee_surname': employee_surname,
             'employee_name': employee_name,
@@ -172,7 +172,7 @@ class EmployeeDetailView(View):
         return redirect(self.success_url)
 
     def update_employee(self, request, pk):
-        form = EmployeeEditForm(request.POST)
+        form = EmployeeDetailForm(request.POST)
         print(form.errors)
         if form.is_valid():
             params = []
@@ -224,11 +224,95 @@ class EmployeeDetailView(View):
 
 
 class ClientListView(View):
-    pass
+    template_name = 'store/client-list.html'
+
+    def get(self, request):
+        form = ClientFilterForm(request.GET)
+
+        query = '''
+                        SELECT card_number, CONCAT(cust_surname, ' ',cust_name) AS full_name, phone_number, 
+                        CONCAT(street, ', ', city, ' ', zip_code) as address, percent as discount
+                        FROM store_customer_card
+                    '''
+
+        if form.is_valid():
+            cust_name = form.cleaned_data.get('client_name')
+            discount = form.cleaned_data.get('client_discount')
+
+            query_params = []
+
+            if discount:
+                query += 'WHERE percent = %s '
+                print("This role ", discount)
+                query_params.append(discount)
+
+            if cust_name:
+                if discount:
+                    query += 'AND CONCAT(cust_surname, \' \', cust_name) ILIKE %s'
+                else:
+                    query += 'WHERE CONCAT(cust_surname, \' \', cust_name) ILIKE %s'
+                query_params.append(f'%{cust_name}%')
+
+            with connection.cursor() as cursor:
+                query += 'ORDER BY 2'
+                cursor.execute(query, query_params)
+                clients = cursor.fetchall()
+
+        else:
+            with connection.cursor() as cursor:
+                query += 'ORDER BY 2'
+                cursor.execute(query)
+                clients = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'clients': clients
+        })
 
 
 class ClientCreateView(View):
-    pass
+    template_name = 'store/client-add.html'
+    success_url = reverse_lazy('client_list')  # Assuming 'product_list' is the name of your product list URL
+
+    def get(self, request):
+        return render(request, template_name=self.template_name, context={
+            'form': ClientDetailForm()
+        })
+
+    def post(self, request):
+        form = ClientDetailForm(request.POST)
+        if form.is_valid():
+            params = []
+            selected_id = form.cleaned_data.get("card_number")
+            params.append(selected_id)
+            selected_surname = form.cleaned_data.get('cust_surname')
+            params.append(selected_surname)
+            selected_name = form.cleaned_data.get('cust_name')
+            params.append(selected_name)
+            selected_patronymic = form.cleaned_data.get('cust_patronymic')
+            params.append(selected_patronymic)
+            selected_phone_number = form.cleaned_data.get('customer_phone_number')
+            params.append(selected_phone_number)
+            selected_city = form.cleaned_data.get('customer_city')
+            params.append(selected_city)
+            selected_street = form.cleaned_data.get('customer_street')
+            params.append(selected_street)
+            selected_zipcode = form.cleaned_data.get('customer_zip_code')
+            params.append(selected_zipcode)
+            selected_percent = form.cleaned_data.get('customer_discount_percent')
+            params.append(selected_percent)
+            insert = """
+                       INSERT INTO store_customer_card VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+                   """
+            with connection.cursor() as cursor:
+                cursor.execute(insert,params)
+
+            messages.success(request, 'Product added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form
+            })
 
 
 class ClientUpdateView(View):

@@ -1,6 +1,9 @@
 import re
 
 from django import forms
+from django.contrib.auth import authenticate, get_user_model
+from django.core.exceptions import ValidationError
+from django.db import connection
 
 from .models import Category, Employee, Product
 
@@ -79,3 +82,49 @@ class ClientDetailForm(forms.Form):
 
 class CategoryDetailForm(forms.Form):
     category_name = forms.CharField(label='Category Name', max_length=50)
+
+
+class UserLoginForm(forms.Form):
+    username = forms.CharField(max_length=20, help_text="Enter username")
+    password = forms.CharField(max_length=50, help_text="Enter password")
+
+    def clean(self, *args, **kwargs):
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+
+        if username and password:
+            user = authenticate(username=username, password=password)
+
+            if not user:
+                raise ValidationError("Incorrect username or password")
+
+            if not user.check_password(password):
+                raise ValidationError("Incorrect password")
+
+        return super(UserLoginForm, self).clean()
+
+
+user = get_user_model()
+
+
+class UserRegisterForm(forms.Form):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+                   SELECT * FROM store_employee WHERE id_employee NOT IN (SELECT id_employee FROM auth_user)
+               """)
+        querys = cursor.fetchall()
+    choices = [(row[0], row[1] + " " + row[2]) for row in querys]
+    empl = forms.ChoiceField(choices=choices)
+    username = forms.CharField(max_length=20, help_text="Enter username")
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    class Meta:
+        model = user
+        fields = [
+            'username',
+            'password',
+            'empl'
+        ]
+
+    def clean(self, *args, **kwargs):
+        return super(UserRegisterForm, self).clean(*args, **kwargs)

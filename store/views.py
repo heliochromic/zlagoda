@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate, login
 from django.db import connection
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
@@ -5,7 +6,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
-    ClientFilterForm, ClientDetailForm, CategoryDetailForm
+    ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm
 
 
 # Create your views here.
@@ -15,7 +16,7 @@ def index(request):
 
 
 class EmployeeListView(View):
-    template_name = 'store/employee-list.html'
+    template_name = 'store/employee/employee-list.html'
 
     def get(self, request):
         form = EmployeeFilterForm(request.GET)
@@ -62,7 +63,7 @@ class EmployeeListView(View):
 
 
 class EmployeeCreateView(View):
-    template_name = 'store/employee-add.html'
+    template_name = 'store/employee/employee-add.html'
     success_url = reverse_lazy('employee_list')  # Assuming 'product_list' is the name of your product list URL
 
     def get(self, request):
@@ -114,7 +115,7 @@ class EmployeeCreateView(View):
 
 
 class EmployeeDetailView(View):
-    template_name = 'store/employee-detail.html'
+    template_name = 'store/employee/employee-detail.html'
     success_url = reverse_lazy('employee_list')
 
     def get(self, request, pk):
@@ -223,7 +224,7 @@ class EmployeeDetailView(View):
 
 
 class ClientListView(View):
-    template_name = 'store/client-list.html'
+    template_name = 'store/client/client-list.html'
 
     def get(self, request):
         form = ClientFilterForm(request.GET)
@@ -270,7 +271,7 @@ class ClientListView(View):
 
 
 class ClientCreateView(View):
-    template_name = 'store/client-add.html'
+    template_name = 'store/client/client-add.html'
     success_url = reverse_lazy('client_list')  # Assuming 'product_list' is the name of your product list URL
 
     def get(self, request):
@@ -315,7 +316,7 @@ class ClientCreateView(View):
 
 
 class ClientUpdateView(View):
-    template_name = 'store/client-detail.html'
+    template_name = 'store/client/client-detail.html'
     success_url = reverse_lazy('client_list')
 
     def get(self, request, pk):
@@ -413,7 +414,7 @@ class ClientUpdateView(View):
 
 
 class CategoryListView(View):
-    template_name = 'store/category-list.html'
+    template_name = 'store/category/category-list.html'
 
     def get(self, request):
         query = '''
@@ -432,7 +433,7 @@ class CategoryListView(View):
 
 
 class CategoryCreateView(View):
-    template_name = 'store/category-add.html'
+    template_name = 'store/category/category-add.html'
     success_url = reverse_lazy('category_list')
 
     def get(self, request):
@@ -461,7 +462,7 @@ class CategoryCreateView(View):
 
 
 class CategoryUpdateView(View):
-    template_name = 'store/category-detail.html'
+    template_name = 'store/category/category-detail.html'
     success_url = reverse_lazy('category_list')
 
     def get(self, request, pk):
@@ -524,7 +525,7 @@ class CategoryUpdateView(View):
 
 
 class ProductListView(View):
-    template_name = 'store/product-list.html'
+    template_name = 'store/product/product-list.html'
 
     def get(self, request):
         form = ProductFilterForm(request.GET)
@@ -570,7 +571,7 @@ class ProductListView(View):
 
 
 class ProductCreateView(View):
-    template_name = 'store/product-add.html'
+    template_name = 'store/product/product-add.html'
     success_url = reverse_lazy('product_list')
 
     def get(self, request):
@@ -602,7 +603,7 @@ class ProductCreateView(View):
 
 
 class ProductDetailView(View):
-    template_name = 'store/product-detail.html'
+    template_name = 'store/product/product-detail.html'
     success_url = reverse_lazy('product_list')
 
     def get(self, request, pk):
@@ -686,3 +687,53 @@ class CheckListView(View):
 
 class CheckDetailsView(View):
     pass
+
+class UserLoginView(View):
+    template_name = 'registration/login.html'
+    success_url = reverse_lazy('products')
+
+    def get(self, request):
+        next = request.GET.get('next')
+        form = UserLoginForm(request.POST or None)
+        if(form.is_valid()):
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+
+            login(request, user)
+
+            if next:
+                return redirect(next)
+            return redirect('/products')
+
+        return render(request, self.template_name, {'form': form})
+
+class UserRegisterView(View):
+    template_name = 'registration/register.html'
+    success_url = reverse_lazy('products')
+
+    def get(self, request):
+        form = UserLoginForm(request.POST or None)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        next = request.GET.get('next')
+        form = UserRegisterForm(request.POST or None)
+        if form.is_valid():
+            user = form.save(commit=False)
+            password = form.cleaned_data.get('password')
+            user.set_password(password)
+            user.save()
+            new_user = authenticate(username=user.username, password=password)
+            login(request, new_user)
+            with connection.cursor() as cursor:
+                cursor.execute("INSERT INTO auth_user(id_employee) VALUES (%s) WHERE username = %s",
+                               [form.empl, user.username])
+            if next:
+                return redirect(next)
+            return redirect('/')
+
+        context = {
+            'form': form,
+        }
+        return render(request, "registration/register.html", context)

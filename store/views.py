@@ -4,8 +4,7 @@ from django.views import View
 from django.contrib import messages
 from django.urls import reverse_lazy
 
-from .models import Employee, Category, Product, Store_Product, Customer_Card, Check, Sale
-from .forms import ProductFilterForm, ProductAddForm, ProductEditForm, EmployeeFilterForm, EmployeeDetailForm, \
+from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
     ClientFilterForm, ClientDetailForm
 
 
@@ -383,11 +382,11 @@ class ProductCreateView(View):
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
-            'form': ProductAddForm()
+            'form': ProductDetailForm()
         })
 
     def post(self, request):
-        form = ProductAddForm(request.POST)
+        form = ProductDetailForm(request.POST)
         if form.is_valid():
             selected_category = form.cleaned_data.get('category')
             selected_product_name = form.cleaned_data.get('product_name')
@@ -423,7 +422,7 @@ class ProductDetailView(View):
 
         product_name, characteristics, category = product[0][1], product[0][2], product[0][3]
 
-        form = ProductEditForm(initial={
+        form = ProductDetailForm(initial={
             'product_name': product_name,
             'characteristics': characteristics,
             'category': category
@@ -450,7 +449,7 @@ class ProductDetailView(View):
         return redirect(self.success_url)
 
     def update_product(self, request, pk):
-        form = ProductEditForm(request.POST)
+        form = ProductDetailForm(request.POST)
 
         if form.is_valid():
             selected_category = form.cleaned_data.get('category')

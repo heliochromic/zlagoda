@@ -11,14 +11,7 @@ class ProductFilterForm(forms.Form):
                                            required=False)
 
 
-class ProductAddForm(forms.Form):
-    category = forms.ModelChoiceField(queryset=Category.objects.all(), empty_label='All Categories',
-                                      help_text="Select category")
-    product_name = forms.CharField(max_length=50, help_text="Enter product name")
-    characteristics = forms.CharField(widget=forms.Textarea, max_length=100, help_text="Enter product characteristics")
-
-
-class ProductEditForm(forms.Form):
+class ProductDetailForm(forms.Form):
     product_name = forms.CharField(label='Product Name', max_length=100)
     characteristics = forms.CharField(label='Characteristics', widget=forms.Textarea)
     category = forms.ModelChoiceField(queryset=Category.objects.all(), label='Category', empty_label='All Categories')
@@ -42,9 +35,9 @@ class EmployeeDetailForm(forms.Form):
     employee_role = forms.CharField(max_length=10, help_text="Enter employee role")
     employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
     employee_date_of_birth = forms.DateField(help_text="Enter employee date of birth",
-                                    widget=forms.DateInput(attrs={'type': 'date'}))
+                                             widget=forms.DateInput(attrs={'type': 'date'}))
     employee_date_of_start = forms.DateField(help_text="Enter date of employee work started",
-                                    widget=forms.DateInput(attrs={'type': 'date'}))
+                                             widget=forms.DateInput(attrs={'type': 'date'}))
     employee_phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
 
     def clean_phone_number(self):

@@ -2,7 +2,7 @@ import re
 
 from django import forms
 
-from .models import Category, Employee
+from .models import Category, Employee, Product
 
 
 class ProductFilterForm(forms.Form):
@@ -75,3 +75,7 @@ class ClientDetailForm(forms.Form):
     customer_street = forms.CharField(max_length=50, help_text="Enter employee street", required=False)
     customer_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code", required=False)
     customer_discount_percent = forms.IntegerField(help_text="Enter percent of discount", required=False)
+
+
+class CategoryDetailForm(forms.Form):
+    category_name = forms.CharField(label='Category Name', max_length=50)

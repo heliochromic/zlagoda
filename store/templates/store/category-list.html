@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    All Categories
+{% endblock %}
+
+{% block css_files %}
+
+{% endblock %}
+
+{% block content %}
+    <section id="all-categories">
+        <a href="{% url 'category_add' %}">
+            <div class="button">
+                Add Category
+            </div>
+        </a>
+        <table>
+            <thead>
+            <tr>
+                <th>Number</th>
+                <th>Name</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for category in categories %}
+                <tr style="cursor:pointer;" onclick="window.location='{% url 'category-detail' pk=category.0 %}'">
+                    <td>{{ category.0 }}</td>
+                    <td>{{ category.1 }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No categories found</td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

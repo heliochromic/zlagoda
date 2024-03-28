@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
-    ClientFilterForm, ClientDetailForm
+    ClientFilterForm, ClientDetailForm, CategoryDetailForm
 
 
 # Create your views here.
@@ -358,7 +358,8 @@ class ClientUpdateView(View):
             return self.update_client(request, pk)
 
     def delete_client(self, request, pk):
-        delete = 'DELETE FROM store_customer_card WHERE card_number = %s'
+        delete = ('DELETE FROM store_customer_card WHERE card_number'
+                  'k = %s')
 
         with connection.cursor() as cursor:
             cursor.execute(delete, [pk])
@@ -412,15 +413,114 @@ class ClientUpdateView(View):
 
 
 class CategoryListView(View):
-    pass
+    template_name = 'store/category-list.html'
+
+    def get(self, request):
+        query = '''
+                SELECT category_number, category_name
+                FROM store_category AS p
+                '''
+
+        with connection.cursor() as cursor:
+            query += 'ORDER BY 2'
+            cursor.execute(query)
+            categories = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'categories': categories
+        })
 
 
 class CategoryCreateView(View):
-    pass
+    template_name = 'store/category-add.html'
+    success_url = reverse_lazy('category_list')
+
+    def get(self, request):
+        return render(request, template_name=self.template_name, context={
+            'form': CategoryDetailForm()
+        })
+
+    def post(self, request):
+        form = CategoryDetailForm(request.POST)
+        if form.is_valid():
+            selected_name = form.cleaned_data.get('category_name')
+
+            insert = """
+                   INSERT INTO store_category (category_name) VALUES (%s);
+               """
+
+            with connection.cursor() as cursor:
+                cursor.execute(insert, [selected_name])
+
+            messages.success(request, 'Category added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form
+            })
 
 
 class CategoryUpdateView(View):
-    pass
+    template_name = 'store/category-detail.html'
+    success_url = reverse_lazy('category_list')
+
+    def get(self, request, pk):
+        query = '''
+                SELECT * FROM store_category WHERE category_number = %s
+                '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            category = cursor.fetchall()
+
+        category_name = category[0][1]
+
+        form = CategoryDetailForm(initial={
+            'category_name': category_name
+        })
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'pk': pk,
+        })
+
+    def post(self, request, pk):
+        if request.POST.get('action') == 'delete':
+            return self.delete_category(request, pk)
+        else:
+            return self.update_category(request, pk)
+
+    def delete_category(self, request, pk):
+        delete = 'DELETE FROM store_category WHERE category_number = %s'
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete, [pk])
+
+        messages.success(request, 'Category deleted successfully')
+        return redirect(self.success_url)
+
+    def update_category(self, request, pk):
+        form = CategoryDetailForm(request.POST)
+
+        if form.is_valid():
+            selected_category = form.cleaned_data.get('category_name')
+
+            update = '''
+                    UPDATE store_category 
+                    SET category_name = %s
+                    WHERE category_number = %s
+                    '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(update,
+                               [selected_category, pk])
+
+            messages.success(request, 'Category updated successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk
+            })
 
 
 class ProductListView(View):

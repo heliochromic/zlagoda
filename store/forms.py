@@ -58,7 +58,7 @@ class ClientFilterForm(forms.Form):
 
 
 class ClientDetailForm(forms.Form):
-    card_number = forms.CharField(max_length=10, help_text="Enter employee id")
+    card_number = forms.CharField(max_length=13, help_text="Enter employee id")
     cust_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
     cust_name = forms.CharField(max_length=50, help_text="Enter employee name")
     cust_patronymic = forms.CharField(max_length=50, required=False, help_text="Enter patronymic")

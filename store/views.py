@@ -242,7 +242,7 @@ class ClientListView(View):
 
             if discount:
                 query += 'WHERE percent = %s '
-                print("This role ", discount)
+                print("This discount ", discount)
                 query_params.append(discount)
 
             if cust_name:
@@ -304,7 +304,7 @@ class ClientCreateView(View):
                        INSERT INTO store_customer_card VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
                    """
             with connection.cursor() as cursor:
-                cursor.execute(insert,params)
+                cursor.execute(insert, params)
 
             messages.success(request, 'Product added successfully')
             return redirect(self.success_url)
@@ -315,7 +315,100 @@ class ClientCreateView(View):
 
 
 class ClientUpdateView(View):
-    pass
+    template_name = 'store/client-detail.html'
+    success_url = reverse_lazy('client_list')
+
+    def get(self, request, pk):
+        query = '''
+               SELECT * FROM store_customer_card WHERE card_number = %s
+               '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            client = cursor.fetchall()
+
+        (card_number, cust_name
+         , cust_surname, cust_patronymic, customer_phone_number
+         , customer_city, customer_street
+         , customer_zip_code, customer_discount_percent) = (client[0][0], client[0][1]
+                                                            , client[0][2], client[0][3], client[0][4]
+                                                            , client[0][5], client[0][6]
+                                                            , client[0][7], client[0][8])
+
+        form = ClientDetailForm(initial={
+            'card_number': card_number,
+            'cust_name': cust_name,
+            'cust_surname': cust_surname,
+            'cust_patronymic': cust_patronymic,
+            'customer_phone_number': customer_phone_number,
+            'customer_city': customer_city,
+            'customer_street': customer_street,
+            'customer_zip_code': customer_zip_code,
+            'customer_discount_percent': customer_discount_percent
+        })
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'pk': pk,
+        })
+
+    def post(self, request, pk):
+        if request.POST.get('action') == 'delete':
+            return self.delete_client(request, pk)
+        else:
+            return self.update_client(request, pk)
+
+    def delete_client(self, request, pk):
+        delete = 'DELETE FROM store_customer_card WHERE card_number = %s'
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete, [pk])
+
+        messages.success(request, 'Client deleted successfully')
+        return redirect(self.success_url)
+
+    def update_client(self, request, pk):
+        form = ClientDetailForm(request.POST)
+        print(form.errors)
+        if form.is_valid():
+            params = []
+            selected_id = form.cleaned_data.get("card_number")
+            params.append(selected_id)
+            selected_surname = form.cleaned_data.get('cust_surname')
+            params.append(selected_surname)
+            selected_name = form.cleaned_data.get('cust_name')
+            params.append(selected_name)
+            selected_patronymic = form.cleaned_data.get('cust_patronymic')
+            params.append(selected_patronymic)
+            selected_phone_number = form.cleaned_data.get('customer_phone_number')
+            params.append(selected_phone_number)
+            selected_city = form.cleaned_data.get('customer_city')
+            params.append(selected_city)
+            selected_street = form.cleaned_data.get('customer_street')
+            params.append(selected_street)
+            selected_zipcode = form.cleaned_data.get('customer_zip_code')
+            params.append(selected_zipcode)
+            selected_percent = form.cleaned_data.get('customer_discount_percent')
+            params.append(selected_percent)
+            params.append(pk)
+
+            update = '''
+                   UPDATE store_customer_card
+                   SET card_number = %s, cust_surname = %s, cust_name = %s,
+                       cust_patronymic = %s, phone_number = %s, city = %s,
+                       street = %s, zip_code = %s, percent = %s
+                   WHERE card_number = %s
+                   '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(update, params)
+
+            messages.success(request, 'Client updated successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk
+            })
 
 
 class CategoryListView(View):

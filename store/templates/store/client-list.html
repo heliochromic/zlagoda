@@ -37,7 +37,7 @@
             </thead>
             <tbody>
             {% for client in clients %}
-                <tr style="cursor:pointer;" onclick="window.location='{% url 'client-details' pk=client.0 %}'">
+                <tr style="cursor:pointer;" onclick="window.location='{% url 'client-detail' pk=client.0 %}'">
                     <td>{{ client.0 }}</td>
                     <td>{{ client.1 }}</td>
                     <td>{{ client.2 }}</td>

@@ -5,10 +5,11 @@ form {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
 }
 
 form label {
-    margin: 20px;
+    margin: 20px 0;
     width: 100%;
     text-align: left;
 }
@@ -31,3 +32,4 @@ form button[type="submit"] {
     width: 100%;
     margin: 0;
 }
+

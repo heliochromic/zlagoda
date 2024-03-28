@@ -10,9 +10,44 @@
 {% endblock %}
 
 {% block content %}
-    <form method="POST" action="{% url 'employee_add' %}">
-        {% csrf_token %}
-         {{ form.as_p }}
-        <button type="submit" class="add-button">Add</button>
-    </form>
+<form method="POST" action="{% url 'employee_add' %}">
+    {% csrf_token %}
+    <label for="employee_id">Employee ID:</label>
+    {{ form.employee_id }}
+
+    <label for="employee_name">Employee Name:</label>
+    {{ form.employee_name }}
+
+    <label for="employee_surname">Employee Surname:</label>
+    {{ form.employee_surname }}
+
+    <label for="employee_patronymic">Employee Patronymic:</label>
+    {{ form.employee_patronymic }}
+
+    <label for="employee_role">Employee Role:</label>
+    {{ form.employee_role }}
+
+    <label for="salary">Salary:</label>
+    {{ form.salary }}
+
+    <label for="date_of_birth">Date of Birth:</label>
+    {{ form.date_of_birth }}
+
+    <label for="date_of_start">Date of Employment:</label>
+    {{ form.date_of_start }}
+
+    <label for="phone_number">Phone Number:</label>
+    {{ form.phone_number }}
+
+    <label for="city">City:</label>
+    {{ form.city }}
+
+    <label for="street">Street:</label>
+    {{ form.street }}
+
+    <label for="zip_code">Zip Code:</label>
+    {{ form.zip_code }}
+
+    <button type="submit" class="add-button">Add</button>
+</form>
 {% endblock %}

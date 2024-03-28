@@ -18,10 +18,10 @@
             <label for="category_name">Category:</label>
             {{ form.category_name }}
 
-            <button type="submit" class="filter-button">Filter</button>
+            <button type="submit" class="button filter-btn">Filter</button>
         </form>
         <a href="{% url 'product_add' %}">
-            <div class="add-button">
+            <div class="button">
                 Add Product
             </div>
         </a>
@@ -36,7 +36,7 @@
             </thead>
             <tbody>
             {% for product in products %}
-                <tr>
+                <tr style="cursor:pointer;" onclick="window.location='{% url 'product-detail' pk=product.0 %}'">
                     <td>{{ product.0 }}</td>
                     <td>{{ product.1 }}</td>
                     <td>{{ product.2 }}</td>
@@ -47,6 +47,7 @@
                     <td colspan="4">No products found</td>
                 </tr>
             {% endfor %}
+
             </tbody>
         </table>
     </section>

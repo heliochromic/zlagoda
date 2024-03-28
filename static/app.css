@@ -17,8 +17,7 @@ a {
     color: inherit;
 }
 
-/* Navigation Bar */
-#all-products {
+#all-products, #all-employees {
     width: 70%;
     margin: 0 auto;
 }
@@ -81,8 +80,7 @@ form button[type="submit"] {
 }
 
 /* Button Styles */
-.add-button,
-.filter-button {
+.button {
     background-color: #13aa52;
     border: 2px solid #13aa52;
     border-radius: 4px;
@@ -102,19 +100,30 @@ form button[type="submit"] {
     margin: 20px 0;
 }
 
-.filter-button {
+.filter-btn {
     background-color: #176bcb;
     border: 2px solid #176bcb;
 }
 
-.add-button:hover,
-.filter-button:hover {
+.edit-btn {
+    background-color: #ffbc3f;
+    border: 2px solid #ffbc3f;
+    margin-bottom: 10px;
+}
+
+.delete-btn {
+    background-color: #ff442a;
+    border: 2px solid #ff442a;
+    margin-top: 10px;
+}
+
+.button:hover {
     box-shadow: rgba(0, 0, 0, .15) 0 3px 9px 0;
     transform: translateY(-2px);
 }
 
 @media (min-width: 768px) {
-    .add-button {
+    .button {
         padding: 10px 30px;
     }
 }
@@ -145,22 +154,32 @@ tbody td {
     border: 1px solid #ddd;
 }
 
+tbody tr {
+    transition: transform 150ms
+}
+
 tbody tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
+tbody tr:hover {
+    background: #bcdcff;
+    transform: scale(1.02);
+}
+
+
 .add-form label {
     display: inline-block;
-    width: 120px; /* Adjust width as needed */
-    margin-right: 10px; /* Add spacing between label and input */
+    width: 120px;
+    margin-right: 10px;
 }
 
 .add-form input[type="text"],
 .add-form select {
-    width: 200px; /* Adjust width as needed */
-    margin-bottom: 10px; /* Add spacing between inputs */
+    width: 200px;
+    margin-bottom: 10px;
 }
 
 .add-form .button {
-    margin-left: 120px; /* Match the width of the label to align the button */
+    margin-left: 120px;
 }

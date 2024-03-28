@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from .models import Employee, Category, Product, Store_Product, Customer_Card, Check, Sale
-from .forms import ProductFilterForm, ProductAddForm, EmployeeFilterForm, EmployeeAddForm
+from .forms import ProductFilterForm, ProductAddForm, ProductEditForm, EmployeeFilterForm, EmployeeAddForm
 
 
 # Create your views here.
@@ -73,7 +73,7 @@ class EmployeeCreateView(View):
     def post(self, request):
         form = EmployeeAddForm(request.POST)
         if form.is_valid():
-            params = list()
+            params = []
             selected_id = form.cleaned_data.get("employee_id")
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('employee_surname')
@@ -171,15 +171,15 @@ class ProductListView(View):
                 query_params.append(f'%{product_name}%')
 
             with connection.cursor() as cursor:
+                query += 'ORDER BY 2'
                 cursor.execute(query, query_params)
                 products = cursor.fetchall()
 
         else:
             with connection.cursor() as cursor:
+                query += 'ORDER BY 2'
                 cursor.execute(query)
                 products = cursor.fetchall()
-
-        print(products)
 
         return render(request, template_name=self.template_name, context={
             'form': form,
@@ -189,7 +189,7 @@ class ProductListView(View):
 
 class ProductCreateView(View):
     template_name = 'store/product-add.html'
-    success_url = reverse_lazy('product_list')  # Assuming 'product_list' is the name of your product list URL
+    success_url = reverse_lazy('product_list')
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -219,8 +219,71 @@ class ProductCreateView(View):
             })
 
 
-class ProductUpdateView(View):
-    pass
+class ProductDetailView(View):
+    template_name = 'store/product-detail.html'
+    success_url = reverse_lazy('product_list')
+
+    def get(self, request, pk):
+        query = '''
+            SELECT * FROM store_product WHERE id_product = %s
+            '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            product = cursor.fetchall()
+
+        product_name, characteristics, category = product[0][1], product[0][2], product[0][3]
+
+        form = ProductEditForm(initial={
+            'product_name': product_name,
+            'characteristics': characteristics,
+            'category': category
+        })
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'pk': pk,
+        })
+
+    def post(self, request, pk):
+        if request.POST.get('action') == 'delete':
+            return self.delete_product(request, pk)
+        else:
+            return self.update_product(request, pk)
+
+    def delete_product(self, request, pk):
+        delete = 'DELETE FROM store_product WHERE id_product = %s'
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete, [pk])
+
+        messages.success(request, 'Product added successfully')
+        return redirect(self.success_url)
+
+    def update_product(self, request, pk):
+        form = ProductEditForm(request.POST)
+
+        if form.is_valid():
+            selected_category = form.cleaned_data.get('category')
+            selected_product_name = form.cleaned_data.get('product_name')
+            selected_characteristics = form.cleaned_data.get('characteristics')
+
+            update = '''
+                UPDATE store_product 
+                SET product_name = %s, characteristics = %s, category_number_id = %s
+                WHERE id_product = %s
+                '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(update,
+                               [selected_product_name, selected_characteristics, selected_category.category_number, pk])
+
+            messages.success(request, 'Product added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk
+            })
 
 
 class StoreProductListView(View):

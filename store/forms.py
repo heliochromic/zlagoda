@@ -18,6 +18,12 @@ class ProductAddForm(forms.Form):
     characteristics = forms.CharField(widget=forms.Textarea, max_length=100, help_text="Enter product characteristics")
 
 
+class ProductEditForm(forms.Form):
+    product_name = forms.CharField(label='Product Name', max_length=100)
+    characteristics = forms.CharField(label='Characteristics', widget=forms.Textarea)
+    category = forms.ModelChoiceField(queryset=Category.objects.all(), label='Category', empty_label='All Categories')
+
+
 class EmployeeFilterForm(forms.Form):
     employee_name = forms.CharField(label='Search', max_length=100, required=False)
     empl_role_choices = Employee.objects.values_list('empl_role', flat=True).distinct()
@@ -32,7 +38,7 @@ class EmployeeAddForm(forms.Form):
     employee_name = forms.CharField(max_length=50, help_text="Enter employee name")
     employee_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
     employee_patronymic = forms.CharField(max_length=50, required=False,
-                                                 help_text="Enter patronymic")
+                                          help_text="Enter patronymic")
     employee_role = forms.CharField(max_length=10, help_text="Enter employee role")
     salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
     date_of_birth = forms.DateField(help_text="Enter employee date of birth")

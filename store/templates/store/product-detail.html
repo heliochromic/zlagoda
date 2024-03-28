@@ -10,17 +10,22 @@
 {% endblock %}
 
 {% block content %}
-    <form method="POST" action="{% url 'product_add' %}">
+    <form method="POST" action="{% url 'product-detail' pk=pk %}">
         {% csrf_token %}
         <label for="category">Category:</label>
         {{ form.category }}
-    
+
         <label for="product_name">Product Name:</label>
         {{ form.product_name }}
 
         <label for="characteristics">Characteristics:</label>
         {{ form.characteristics }}
 
-        <button type="submit" class="button">Add</button>
+        <button type="submit" class="button edit-btn">Edit</button>
+    </form>
+    <form method="POST" action="{% url 'product-detail' pk=pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="button delete-btn">Delete</button>
     </form>
 {% endblock %}

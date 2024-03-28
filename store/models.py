@@ -22,7 +22,7 @@ class Employee(models.Model):
         return f"{self.empl_surname}, {self.empl_name}"
 
     def get_absolute_url(self):
-        return reverse('employee-detail', args=[str(self.id_employee)])
+        return reverse('employee-detail', kwargs={'pk': str(self.id_employee)})
 
 
 class Category(models.Model):
@@ -46,8 +46,7 @@ class Product(models.Model):
         return self.product_name
 
     def get_absolute_url(self):
-        return reverse('product-detail', args=[str(self.id_product)])
-
+        return reverse('product-detail', kwargs={'pk': self.id_product})
 
 class Store_Product(models.Model):
     UPC = models.CharField(max_length=12, primary_key=True, help_text="Enter store product's UPC")

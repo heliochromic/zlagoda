@@ -108,13 +108,7 @@ user = get_user_model()
 
 
 class UserRegisterForm(forms.ModelForm):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-                   SELECT * FROM store_employee s LEFT JOIN auth_user a ON a.id_employee = s.id_employee WHERE a.id_employee is NULL
-               """)
-        querys = cursor.fetchall()
-    choices = [(row[0], row[1] + " " + row[2]) for row in querys]
-    empl = forms.ChoiceField(choices=choices)
+    empl = forms.ChoiceField(choices=None)
     username = forms.CharField(max_length=20, help_text="Enter username")
     password = forms.CharField(widget=forms.PasswordInput)
 
@@ -128,3 +122,16 @@ class UserRegisterForm(forms.ModelForm):
 
     def clean(self, *args, **kwargs):
         return super(UserRegisterForm, self).clean()
+
+    def __init__(self, *args, **kwargs):
+        super(UserRegisterForm, self).__init__(*args, **kwargs)
+        self.update_choices()
+
+    def update_choices(self):
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT * FROM store_employee s LEFT JOIN auth_user a ON a.id_employee = s.id_employee WHERE a.id_employee is NULL
+            """)
+            querys = cursor.fetchall()
+        choices = [(row[0], row[1] + " " + row[2]) for row in querys]
+        self.fields['empl'].choices = choices

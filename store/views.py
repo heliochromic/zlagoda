@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login
 from django.db import connection
+from django import forms
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
 from django.contrib import messages
@@ -744,3 +745,5 @@ class UserRegisterView(View):
             'form': form,
         }
         return render(request, "registration/register.html", context)
+
+

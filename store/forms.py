@@ -107,7 +107,7 @@ class UserLoginForm(forms.Form):
 user = get_user_model()
 
 
-class UserRegisterForm(forms.ModelForm):
+class UserRegisterForm(forms.Form):
     empl = forms.ChoiceField(choices=None)
     username = forms.CharField(max_length=20, help_text="Enter username")
     password = forms.CharField(widget=forms.PasswordInput)

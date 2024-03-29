@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
 from django.db import connection
-from django import forms
+from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
 from django.contrib import messages
@@ -723,12 +724,22 @@ class UserRegisterView(View):
         next = request.GET.get('next')
         form = UserRegisterForm(request.POST or None)
         if form.is_valid():
-            user = form.save(commit=False)
-            password = form.cleaned_data.get('password')
-            user.set_password(password)
-            user.save()
-            new_user = authenticate(username=user.username, password=password)
+            selected_username = form.cleaned_data.get('username')
+            selected_password = make_password(form.cleaned_data.get('password'))
+            selected_empl = form.cleaned_data.get('empl')
+            with connection.cursor() as cursor:
+                cursor.execute("""SELECT empl_name, empl_surname FROM store_employee WHERE id_employee = %s""",
+                                          [selected_empl])
+                employee = cursor.fetchall()[0]
+                cursor.execute("""INSERT INTO auth_user(password, is_superuser, username, first_name, last_name, email,
+                                                        is_staff, is_active, date_joined, id_employee) 
+                                                        VALUES (%s, %s, %s, %s, %s, %s, %s,%s, CURRENT_TIMESTAMP, %s)
+                               """, [selected_password, False, selected_username, employee[0], employee[1], '', True, True
+                                     , selected_empl])
+
+            new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))
             login(request, new_user)
+
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE auth_user SET id_employee = %s WHERE username = %s",
                                [form.cleaned_data.get('empl'), form.cleaned_data.get('username')])
@@ -736,7 +747,8 @@ class UserRegisterView(View):
                     group_id = 1
                 else:
                     group_id = 2
-                cursor.execute("INSERT INTO auth_user_groups(user_id, group_id) VALUES (%s, %s)", [new_user.id, group_id])
+                cursor.execute("INSERT INTO auth_user_groups(user_id, group_id) VALUES (%s, %s)",
+                               [new_user.id, group_id])
             if next:
                 return redirect(next)
             return redirect('/')
@@ -745,5 +757,3 @@ class UserRegisterView(View):
             'form': form,
         }
         return render(request, "registration/register.html", context)
-
-

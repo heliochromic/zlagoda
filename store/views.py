@@ -1,22 +1,21 @@
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.db import connection
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
 from django.contrib import messages
 from django.urls import reverse_lazy
-
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm
 
 
-# Create your views here.
-
+# Create your views here
 def index(request):
     return redirect('product_list')
 
-
+@method_decorator(login_required, name='dispatch')
 class EmployeeListView(View):
     template_name = 'store/employee/employee-list.html'
 
@@ -63,7 +62,7 @@ class EmployeeListView(View):
             'employees': employees
         })
 
-
+@method_decorator(login_required, name='dispatch')
 class EmployeeCreateView(View):
     template_name = 'store/employee/employee-add.html'
     success_url = reverse_lazy('employee_list')  # Assuming 'product_list' is the name of your product list URL
@@ -115,7 +114,7 @@ class EmployeeCreateView(View):
                 'form': form
             })
 
-
+@method_decorator(login_required, name='dispatch')
 class EmployeeDetailView(View):
     template_name = 'store/employee/employee-detail.html'
     success_url = reverse_lazy('employee_list')
@@ -224,7 +223,7 @@ class EmployeeDetailView(View):
                 'pk': pk
             })
 
-
+@method_decorator(login_required, name='dispatch')
 class ClientListView(View):
     template_name = 'store/client/client-list.html'
 
@@ -271,7 +270,7 @@ class ClientListView(View):
             'clients': clients
         })
 
-
+@method_decorator(login_required, name='dispatch')
 class ClientCreateView(View):
     template_name = 'store/client/client-add.html'
     success_url = reverse_lazy('client_list')  # Assuming 'product_list' is the name of your product list URL
@@ -316,7 +315,7 @@ class ClientCreateView(View):
                 'form': form
             })
 
-
+@method_decorator(login_required, name='dispatch')
 class ClientUpdateView(View):
     template_name = 'store/client/client-detail.html'
     success_url = reverse_lazy('client_list')
@@ -414,7 +413,7 @@ class ClientUpdateView(View):
                 'pk': pk
             })
 
-
+@method_decorator(login_required, name='dispatch')
 class CategoryListView(View):
     template_name = 'store/category/category-list.html'
 
@@ -433,7 +432,7 @@ class CategoryListView(View):
             'categories': categories
         })
 
-
+@method_decorator(login_required, name='dispatch')
 class CategoryCreateView(View):
     template_name = 'store/category/category-add.html'
     success_url = reverse_lazy('category_list')
@@ -462,7 +461,7 @@ class CategoryCreateView(View):
                 'form': form
             })
 
-
+@method_decorator(login_required, name='dispatch')
 class CategoryUpdateView(View):
     template_name = 'store/category/category-detail.html'
     success_url = reverse_lazy('category_list')
@@ -525,7 +524,7 @@ class CategoryUpdateView(View):
                 'pk': pk
             })
 
-
+@method_decorator(login_required, name='dispatch')
 class ProductListView(View):
     template_name = 'store/product/product-list.html'
 
@@ -571,7 +570,7 @@ class ProductListView(View):
             'products': products
         })
 
-
+@method_decorator(login_required, name='dispatch')
 class ProductCreateView(View):
     template_name = 'store/product/product-add.html'
     success_url = reverse_lazy('product_list')
@@ -603,7 +602,7 @@ class ProductCreateView(View):
                 'form': form
             })
 
-
+@method_decorator(login_required, name='dispatch')
 class ProductDetailView(View):
     template_name = 'store/product/product-detail.html'
     success_url = reverse_lazy('product_list')
@@ -696,20 +695,22 @@ class UserLoginView(View):
     success_url = reverse_lazy('products')
 
     def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('/products')
+        form = UserLoginForm(request.POST or None)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
         next = request.GET.get('next')
         form = UserLoginForm(request.POST or None)
         if (form.is_valid()):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
-
             login(request, user)
-
             if next:
                 return redirect(next)
             return redirect('/products')
-
-        return render(request, self.template_name, {'form': form})
 
 
 class UserRegisterView(View):
@@ -717,6 +718,8 @@ class UserRegisterView(View):
     success_url = reverse_lazy('products')
 
     def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('/products')
         form = UserRegisterForm(request.POST or None)
         return render(request, self.template_name, {'form': form})
 
@@ -739,7 +742,6 @@ class UserRegisterView(View):
 
             new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))
             login(request, new_user)
-
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE auth_user SET id_employee = %s WHERE username = %s",
                                [form.cleaned_data.get('empl'), form.cleaned_data.get('username')])
@@ -757,3 +759,7 @@ class UserRegisterView(View):
             'form': form,
         }
         return render(request, "registration/register.html", context)
+
+def logout_view(request):
+    logout(request)
+    return redirect('/accounts/login')

@@ -34,7 +34,7 @@ urlpatterns = [
     path('check/', views.CheckListView.as_view(), name='check_list'),
     path('check-details/', views.CheckDetailsView.as_view(), name='check_details'),
 
-    path('login/', views.UserLoginView.as_view(), name='user_login'),
-    path('register/', views.UserRegisterView.as_view(), name='user_register'),
-
+    path('accounts/login/', views.UserLoginView.as_view(), name='user_login'),
+    path('accounts/register/', views.UserRegisterView.as_view(), name='user_register'),
+    path('accounts/logout/', views.logout_view, name='logout')
 ]

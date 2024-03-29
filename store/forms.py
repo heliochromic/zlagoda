@@ -107,10 +107,10 @@ class UserLoginForm(forms.Form):
 user = get_user_model()
 
 
-class UserRegisterForm(forms.Form):
+class UserRegisterForm(forms.ModelForm):
     with connection.cursor() as cursor:
         cursor.execute("""
-                   SELECT * FROM store_employee WHERE id_employee NOT IN (SELECT id_employee FROM auth_user)
+                   SELECT * FROM store_employee s LEFT JOIN auth_user a ON a.id_employee = s.id_employee WHERE a.id_employee is NULL
                """)
         querys = cursor.fetchall()
     choices = [(row[0], row[1] + " " + row[2]) for row in querys]
@@ -127,4 +127,4 @@ class UserRegisterForm(forms.Form):
         ]
 
     def clean(self, *args, **kwargs):
-        return super(UserRegisterForm, self).clean(*args, **kwargs)
+        return super(UserRegisterForm, self).clean()

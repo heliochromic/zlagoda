@@ -688,6 +688,7 @@ class CheckListView(View):
 class CheckDetailsView(View):
     pass
 
+
 class UserLoginView(View):
     template_name = 'registration/login.html'
     success_url = reverse_lazy('products')
@@ -695,7 +696,7 @@ class UserLoginView(View):
     def get(self, request):
         next = request.GET.get('next')
         form = UserLoginForm(request.POST or None)
-        if(form.is_valid()):
+        if (form.is_valid()):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
@@ -708,12 +709,13 @@ class UserLoginView(View):
 
         return render(request, self.template_name, {'form': form})
 
+
 class UserRegisterView(View):
     template_name = 'registration/register.html'
     success_url = reverse_lazy('products')
 
     def get(self, request):
-        form = UserLoginForm(request.POST or None)
+        form = UserRegisterForm(request.POST or None)
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
@@ -727,8 +729,13 @@ class UserRegisterView(View):
             new_user = authenticate(username=user.username, password=password)
             login(request, new_user)
             with connection.cursor() as cursor:
-                cursor.execute("INSERT INTO auth_user(id_employee) VALUES (%s) WHERE username = %s",
-                               [form.empl, user.username])
+                cursor.execute("UPDATE auth_user SET id_employee = %s WHERE username = %s",
+                               [form.cleaned_data.get('empl'), form.cleaned_data.get('username')])
+                if 'CASH' in form.cleaned_data.get('empl'):
+                    group_id = 1
+                else:
+                    group_id = 2
+                cursor.execute("INSERT INTO auth_user_groups(user_id, group_id) VALUES (%s, %s)", [new_user.id, group_id])
             if next:
                 return redirect(next)
             return redirect('/')

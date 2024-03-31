@@ -13,7 +13,8 @@ from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, Emp
 
 # Create your views here
 def index(request):
-    return redirect('product_list')
+    return redirect('product-list')
+
 
 @method_decorator(login_required, name='dispatch')
 class EmployeeListView(View):
@@ -62,10 +63,11 @@ class EmployeeListView(View):
             'employees': employees
         })
 
+
 @method_decorator(login_required, name='dispatch')
 class EmployeeCreateView(View):
     template_name = 'store/employee/employee-add.html'
-    success_url = reverse_lazy('employee_list')  # Assuming 'product_list' is the name of your product list URL
+    success_url = reverse_lazy('employee-list')  # Assuming 'product_list' is the name of your product list URL
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -114,10 +116,11 @@ class EmployeeCreateView(View):
                 'form': form
             })
 
+
 @method_decorator(login_required, name='dispatch')
 class EmployeeDetailView(View):
     template_name = 'store/employee/employee-detail.html'
-    success_url = reverse_lazy('employee_list')
+    success_url = reverse_lazy('employee-list')
 
     def get(self, request, pk):
         query = '''
@@ -223,6 +226,7 @@ class EmployeeDetailView(View):
                 'pk': pk
             })
 
+
 @method_decorator(login_required, name='dispatch')
 class ClientListView(View):
     template_name = 'store/client/client-list.html'
@@ -270,10 +274,11 @@ class ClientListView(View):
             'clients': clients
         })
 
+
 @method_decorator(login_required, name='dispatch')
 class ClientCreateView(View):
     template_name = 'store/client/client-add.html'
-    success_url = reverse_lazy('client_list')  # Assuming 'product_list' is the name of your product list URL
+    success_url = reverse_lazy('client-list')  # Assuming 'product_list' is the name of your product list URL
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -315,10 +320,11 @@ class ClientCreateView(View):
                 'form': form
             })
 
+
 @method_decorator(login_required, name='dispatch')
 class ClientUpdateView(View):
     template_name = 'store/client/client-detail.html'
-    success_url = reverse_lazy('client_list')
+    success_url = reverse_lazy('client-list')
 
     def get(self, request, pk):
         query = '''
@@ -360,8 +366,7 @@ class ClientUpdateView(View):
             return self.update_client(request, pk)
 
     def delete_client(self, request, pk):
-        delete = ('DELETE FROM store_customer_card WHERE card_number'
-                  'k = %s')
+        delete = ('DELETE FROM store_customer_card WHERE card_number = %s')
 
         with connection.cursor() as cursor:
             cursor.execute(delete, [pk])
@@ -413,6 +418,7 @@ class ClientUpdateView(View):
                 'pk': pk
             })
 
+
 @method_decorator(login_required, name='dispatch')
 class CategoryListView(View):
     template_name = 'store/category/category-list.html'
@@ -432,10 +438,11 @@ class CategoryListView(View):
             'categories': categories
         })
 
+
 @method_decorator(login_required, name='dispatch')
 class CategoryCreateView(View):
     template_name = 'store/category/category-add.html'
-    success_url = reverse_lazy('category_list')
+    success_url = reverse_lazy('category-list')
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -461,10 +468,11 @@ class CategoryCreateView(View):
                 'form': form
             })
 
+
 @method_decorator(login_required, name='dispatch')
 class CategoryUpdateView(View):
     template_name = 'store/category/category-detail.html'
-    success_url = reverse_lazy('category_list')
+    success_url = reverse_lazy('category-list')
 
     def get(self, request, pk):
         query = '''
@@ -524,6 +532,7 @@ class CategoryUpdateView(View):
                 'pk': pk
             })
 
+
 @method_decorator(login_required, name='dispatch')
 class ProductListView(View):
     template_name = 'store/product/product-list.html'
@@ -570,10 +579,11 @@ class ProductListView(View):
             'products': products
         })
 
+
 @method_decorator(login_required, name='dispatch')
 class ProductCreateView(View):
     template_name = 'store/product/product-add.html'
-    success_url = reverse_lazy('product_list')
+    success_url = reverse_lazy('product-list')
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -602,10 +612,11 @@ class ProductCreateView(View):
                 'form': form
             })
 
+
 @method_decorator(login_required, name='dispatch')
 class ProductDetailView(View):
     template_name = 'store/product/product-detail.html'
-    success_url = reverse_lazy('product_list')
+    success_url = reverse_lazy('product-list')
 
     def get(self, request, pk):
         query = '''
@@ -682,12 +693,75 @@ class StoreProductUpdateView(View):
     pass
 
 
+@method_decorator(login_required, name='dispatch')
 class CheckListView(View):
-    pass
+    template_name = 'store/check/check-list.html'
+
+    def get(self, request):
+        query = """
+        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
+            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
+        FROM store_check AS sc 
+        INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            checks = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'checks': checks
+        })
 
 
 class CheckDetailsView(View):
-    pass
+    template_name = 'store/check/check-detail.html'
+
+    def get(self, request, pk):
+        query = """
+        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
+            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
+        FROM store_check AS sc 
+        INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        WHERE sc.check_number = %s
+        """
+
+        all_products_query = """
+        SELECT
+            ss."UPC_id",
+            upc_pn.product_name,
+            ss.product_number,
+            ss.selling_price,
+            COALESCE(cp.percent, 0) AS percent,
+            ROUND((ss.product_number * ss.selling_price) * (100 - percent) / 100, 2) AS discounted_price
+        FROM store_sale AS ss
+        INNER JOIN (SELECT ssp."UPC", sp.product_name
+                    FROM store_store_product AS ssp
+                    INNER JOIN store_product AS sp
+                    ON ssp.id_product_id = sp.id_product
+        ) AS upc_pn
+        ON ss."UPC_id" = upc_pn."UPC"
+        LEFT JOIN (SELECT sc.check_number, scc.percent
+                    FROM store_check AS sc
+                    INNER JOIN store_customer_card AS scc
+                    ON sc.card_number_id = scc.card_number
+        ) AS cp
+        ON ss.check_number_id = cp.check_number
+        WHERE ss.check_number_id = %s;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(all_products_query, [pk])
+            all_products_in_check = cursor.fetchall()
+            cursor.execute(query, [pk])
+            check_header = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'all_products_in_check': all_products_in_check,
+            'check_header': check_header
+        })
 
 
 class UserLoginView(View):
@@ -732,13 +806,14 @@ class UserRegisterView(View):
             selected_empl = form.cleaned_data.get('empl')
             with connection.cursor() as cursor:
                 cursor.execute("""SELECT empl_name, empl_surname FROM store_employee WHERE id_employee = %s""",
-                                          [selected_empl])
+                               [selected_empl])
                 employee = cursor.fetchall()[0]
                 cursor.execute("""INSERT INTO auth_user(password, is_superuser, username, first_name, last_name, email,
                                                         is_staff, is_active, date_joined, id_employee) 
                                                         VALUES (%s, %s, %s, %s, %s, %s, %s,%s, CURRENT_TIMESTAMP, %s)
-                               """, [selected_password, False, selected_username, employee[0], employee[1], '', True, True
-                                     , selected_empl])
+                               """,
+                               [selected_password, False, selected_username, employee[0], employee[1], '', True, True
+                                   , selected_empl])
 
             new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))
             login(request, new_user)
@@ -759,6 +834,7 @@ class UserRegisterView(View):
             'form': form,
         }
         return render(request, "registration/register.html", context)
+
 
 def logout_view(request):
     logout(request)

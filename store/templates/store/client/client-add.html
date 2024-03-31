@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block content %}
-<form method="POST" action="{% url 'client_add' %}">
+<form method="POST" action="{% url 'client-add' %}">
     {% csrf_token %}
     <label for="card_number">Customer ID:</label>
     {{ form.card_number }}

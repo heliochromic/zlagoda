@@ -11,7 +11,7 @@
 
 {% block content %}
     <section id="all-products">
-        <form method="GET" action="{% url 'product_list' %}">
+        <form method="GET" action="{% url 'product-list' %}">
             <label for="product_name">Product Name:</label>
             {{ form.product_name }}
 
@@ -20,7 +20,7 @@
 
             <button type="submit" class="button filter-btn">Filter</button>
         </form>
-        <a href="{% url 'product_add' %}">
+        <a href="{% url 'product-add' %}">
             <div class="button">
                 Add Product
             </div>

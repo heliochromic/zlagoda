@@ -11,7 +11,7 @@
 
 {% block content %}
     <section id="all-clients">
-        <form method="GET" action="{% url 'client_list' %}">
+        <form method="GET" action="{% url 'client-list' %}">
             <label for="client_name">Client Name:</label>
             {{ form.client_name }}
 
@@ -20,7 +20,7 @@
 
             <button type="submit" class="filter-button">Filter</button>
         </form>
-        <a href="{% url 'client_add' %}">
+        <a href="{% url 'client-add' %}">
             <div class="add-button">
                 Add Client
             </div>

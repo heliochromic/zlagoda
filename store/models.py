@@ -48,6 +48,7 @@ class Product(models.Model):
     def get_absolute_url(self):
         return reverse('product-detail', kwargs={'pk': self.id_product})
 
+
 class Store_Product(models.Model):
     UPC = models.CharField(max_length=12, primary_key=True, help_text="Enter store product's UPC")
     UPC_prom = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,
@@ -98,7 +99,7 @@ class Check(models.Model):
         return self.check_number
 
     def get_absolute_url(self):
-        return reverse('check-details', args=[str(self.check_number)])
+        return reverse('check-details', kwargs={'pk': self.check_number})
 
 
 class Sale(models.Model):

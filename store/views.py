@@ -508,7 +508,7 @@ class CategoryUpdateView(View):
         return redirect(self.success_url)
 
     def update_category(self, request, pk):
-        form = CategoryDetailForm(request.POST, initial={"pk":pk})
+        form = CategoryDetailForm(request.POST, initial={"pk": pk})
         print(form.errors)
         if form.is_valid():
             selected_category = form.cleaned_data
@@ -841,3 +841,26 @@ class UserRegisterView(View):
 def logout_view(request):
     logout(request)
     return redirect('/accounts/login')
+
+
+def user_profile(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""SELECT e.* 
+                       FROM auth_user a JOIN store_employee e ON a.id_employee = e.id_employee
+                       WHERE a.id = %s """, [request.user.id])
+        data = cursor.fetchall()
+        print(data)
+        employee = dict()
+        employee['id'] = data[0][0]
+        employee['employee_surname'] = data[0][1]
+        employee['employee_name'] = data[0][2]
+        employee['employee_patronymic'] = data[0][3]
+        employee['employee_role'] = data[0][4]
+        employee['employee_salary'] = data[0][5]
+        employee['employee_date_of_birth'] = data[0][6]
+        employee['employee_date_of_start'] = data[0][7]
+        employee['employee_phone_number'] = data[0][8]
+        employee['employee_city'] = data[0][9]
+        employee['employee_street'] = data[0][10]
+        employee['employee_zip_code'] = data[0][11]
+        return render(request, "profile/profile.html", {"user": employee})

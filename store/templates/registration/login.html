@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block content %}
-    <form method="POST" action="{% url 'user_login' %}">
+    <form method="POST" action="{% url 'user-login' %}">
         {% csrf_token %}
     
         <label for="username">username:</label>
@@ -18,7 +18,7 @@
 
       <label for="password">password:</label>
         {{ form.password }}
-        <button type="submit" class="button">Add</button>
+        <button type="submit" class="button">Log in</button>
     </form>
-<p><a href="/register">Create new account</a></p>
+<p><a href="{% url 'user-register' %}">Create new account</a></p>
 {% endblock %}

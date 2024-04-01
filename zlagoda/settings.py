@@ -83,7 +83,7 @@ WSGI_APPLICATION = 'zlagoda.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('ENGINE'),
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('NAME'),
         'USER': os.getenv('USER'),
         'PASSWORD': os.getenv('PASSWORD'),

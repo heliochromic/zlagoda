@@ -6,35 +6,35 @@ urlpatterns = [
     path('', views.index, name='index'),
 
     # For employee URLs
-    path('employee/', views.EmployeeListView.as_view(), name='employee_list'),
-    path('employee/add/', views.EmployeeCreateView.as_view(), name='employee_add'),
+    path('employee/', views.EmployeeListView.as_view(), name='employee-list'),
+    path('employee/add/', views.EmployeeCreateView.as_view(), name='employee-add'),
     path('employee/<str:pk>', views.EmployeeDetailView.as_view(), name='employee-detail'),
 
     # For clients URLs
-    path('clients/', views.ClientListView.as_view(), name='client_list'),
-    path('clients/add/', views.ClientCreateView.as_view(), name='client_add'),
+    path('clients/', views.ClientListView.as_view(), name='client-list'),
+    path('clients/add/', views.ClientCreateView.as_view(), name='client-add'),
     path('clients/<str:pk>', views.ClientUpdateView.as_view(), name='client-detail'),
 
     # For categories URLs
-    path('categories/', views.CategoryListView.as_view(), name='category_list'),
-    path('categories/add/', views.CategoryCreateView.as_view(), name='category_add'),
+    path('categories/', views.CategoryListView.as_view(), name='category-list'),
+    path('categories/add/', views.CategoryCreateView.as_view(), name='category-add'),
     path('categories/<int:pk>', views.CategoryUpdateView.as_view(), name='category-detail'),
 
     # For products URLs
-    path('products/', views.ProductListView.as_view(), name='product_list'),
-    path('products/add/', views.ProductCreateView.as_view(), name='product_add'),
+    path('products/', views.ProductListView.as_view(), name='product-list'),
+    path('products/add/', views.ProductCreateView.as_view(), name='product-add'),
     path('products/<int:pk>', views.ProductDetailView.as_view(), name='product-detail'),
 
     # For store-products URLs
-    path('store-products/', views.StoreProductListView.as_view(), name='store_product_list'),
-    path('store-products/add/', views.StoreProductCreateView.as_view(), name='store_product_add'),
+    path('store-products/', views.StoreProductListView.as_view(), name='store-product-list'),
+    path('store-products/add/', views.StoreProductCreateView.as_view(), name='store-product-add'),
     path('store-products/<int:pk>', views.StoreProductUpdateView.as_view(), name='store-product-details'),
 
     # For check URLs
-    path('check/', views.CheckListView.as_view(), name='check_list'),
-    path('check-details/', views.CheckDetailsView.as_view(), name='check_details'),
+    path('check/', views.CheckListView.as_view(), name='check-list'),
+    path('check/<str:pk>', views.CheckDetailsView.as_view(), name='check-details'),
 
-    path('login/', views.UserLoginView.as_view(), name='user_login'),
-    path('register/', views.UserRegisterView.as_view(), name='user_register'),
-
+    path('accounts/login/', views.UserLoginView.as_view(), name='user-login'),
+    path('accounts/register/', views.UserRegisterView.as_view(), name='user-register'),
+    path('accounts/logout/', views.logout_view, name='logout')
 ]

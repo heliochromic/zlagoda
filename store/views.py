@@ -698,6 +698,7 @@ class CheckListView(View):
     template_name = 'store/check/check-list.html'
 
     def get(self, request):
+        print(request.user.groups.all()[0])
         query = """
         SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
             sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
@@ -766,7 +767,7 @@ class CheckDetailsView(View):
 
 class UserLoginView(View):
     template_name = 'registration/login.html'
-    success_url = reverse_lazy('products')
+    success_url = reverse_lazy('/products')
 
     def get(self, request):
         if request.user.is_authenticated:
@@ -812,7 +813,7 @@ class UserRegisterView(View):
                                                         is_staff, is_active, date_joined, id_employee) 
                                                         VALUES (%s, %s, %s, %s, %s, %s, %s,%s, CURRENT_TIMESTAMP, %s)
                                """,
-                               [selected_password, False, selected_username, employee[0], employee[1], '', True, True
+                               [selected_password, False, selected_username, employee[0], employee[1], '', selected_empl==2, True
                                    , selected_empl])
 
             new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))

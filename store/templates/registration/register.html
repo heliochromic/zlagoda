@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block content %}
-    <form method="POST" action="{% url 'user_register' %}">
+    <form method="POST" action="{% url 'user-register' %}">
         {% csrf_token %}
 
         <label for="username">username:</label>

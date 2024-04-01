@@ -20,11 +20,13 @@
 
             <button type="submit" class="button filter-btn">Filter</button>
         </form>
+         {%if user.groups.first.name == "manager" %}
         <a href="{% url 'product-add' %}">
             <div class="button">
                 Add Product
             </div>
         </a>
+        {% endif %}
         <table>
             <thead>
             <tr>
@@ -36,7 +38,7 @@
             </thead>
             <tbody>
             {% for product in products %}
-                <tr style="cursor:pointer;" onclick="window.location='{% url 'product-detail' pk=product.0 %}'">
+                <tr style="cursor:pointer;" {%if user.groups.first.name == "manager" %}onclick="window.location='{% url 'product-detail' pk=product.0 %}'"{%endif%}>
                     <td>{{ product.0 }}</td>
                     <td>{{ product.1 }}</td>
                     <td>{{ product.2 }}</td>

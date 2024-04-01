@@ -8,7 +8,8 @@ from django.views import View
 from django.contrib import messages
 from django.urls import reverse_lazy
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
-    ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm
+    ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm, CheckProductDetailForm, \
+    CheckDetailForm
 
 
 # Create your views here
@@ -67,7 +68,7 @@ class EmployeeListView(View):
 @method_decorator(login_required, name='dispatch')
 class EmployeeCreateView(View):
     template_name = 'store/employee/employee-add.html'
-    success_url = reverse_lazy('employee-list')  # Assuming 'product_list' is the name of your product list URL
+    success_url = reverse_lazy('employee-list')
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -698,7 +699,8 @@ class CheckListView(View):
     template_name = 'store/check/check-list.html'
 
     def get(self, request):
-        print(request.user.groups.all()[0])
+        employee_role = str(request.user.groups.all()[0])
+        auth_user_id = request.user.id
         query = """
         SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
             sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
@@ -707,15 +709,113 @@ class CheckListView(View):
         INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
         """
 
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            checks = cursor.fetchall()
+        if employee_role == 'cashier':
+            query += "WHERE se.id_employee = %s;"
+
+            employee_id_query = "SELECT id_employee FROM auth_user WHERE id = %s"
+
+            with connection.cursor() as cursor:
+                cursor.execute(employee_id_query, [auth_user_id])
+                employee_id = cursor.fetchall()
+                cursor.execute(query, [employee_id[0]])
+                checks = cursor.fetchall()
+
+        else:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                checks = cursor.fetchall()
 
         return render(request, template_name=self.template_name, context={
             'checks': checks
         })
 
 
+@method_decorator(login_required, name='dispatch')
+class CheckCreateView(View):
+    template_name = 'store/check/check-add.html'
+    success_url = reverse_lazy('с-list')
+
+    def get(self, request):
+        form = CheckDetailForm()
+        all_products_query = """
+        SELECT sp.id_product, sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number 
+        FROM store_store_product AS ssp
+        INNER JOIN public.store_product AS sp 
+        ON sp.id_product = ssp.id_product_id
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(all_products_query),
+            all_products = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'all_products': all_products
+        })
+
+    def post(self, request):
+        selected_upc = request.POST.get('product_upc', None)
+        selected_amount = request.POST.get('quantity', None)
+
+        check_temporary_list = request.session.get('check_temporary_list', [])
+
+        check_temporary_list.append((selected_upc, selected_amount))
+
+        request.session['check_temporary_list'] = check_temporary_list
+
+        # зроби запит, щоб витягалися всі дані про збережені продукти, та за натискання кнопки
+        # "add check" контекст видалявся, можна ще додати іншу кнопку чисто з "clean check"
+        form = CheckDetailForm()
+        all_products_query = """
+        SELECT sp.id_product, sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number 
+        FROM store_store_product AS ssp
+        INNER JOIN public.store_product AS sp 
+        ON sp.id_product = ssp.id_product_id
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(all_products_query),
+            all_products = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'selected_products': None,
+            'all_products': all_products
+        })
+
+
+
+class CheckProductDetailView(View):
+    template_name = 'store/check/check-product-detail.html'
+
+    def get(self, request, upc):
+        form = CheckProductDetailForm()
+
+        product_query = """
+        SELECT sp.id_product, sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
+        INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
+        INNER JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
+        WHERE sp.id_product = %s;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(product_query, [upc])
+            product = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'product': product
+        })
+
+    # def post(self, request, upc):
+    #
+    #     return render(request, template_name=self.template_name, context={
+    #         'form': form,
+    #     })
+        # if form.is_valid():
+        #     request.session.get('check_temp_list', [])
+
+@method_decorator(login_required, name='dispatch')
 class CheckDetailsView(View):
     template_name = 'store/check/check-detail.html'
 
@@ -734,7 +834,7 @@ class CheckDetailsView(View):
             ss."UPC_id",
             upc_pn.product_name,
             ss.product_number,
-            ss.selling_price,
+            ROUND(ss.selling_price, 2),
             COALESCE(cp.percent, 0) AS percent,
             ROUND((ss.product_number * ss.selling_price) * (100 - percent) / 100, 2) AS discounted_price
         FROM store_sale AS ss
@@ -778,7 +878,7 @@ class UserLoginView(View):
     def post(self, request):
         next = request.GET.get('next')
         form = UserLoginForm(request.POST or None)
-        if (form.is_valid()):
+        if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
@@ -813,7 +913,8 @@ class UserRegisterView(View):
                                                         is_staff, is_active, date_joined, id_employee) 
                                                         VALUES (%s, %s, %s, %s, %s, %s, %s,%s, CURRENT_TIMESTAMP, %s)
                                """,
-                               [selected_password, False, selected_username, employee[0], employee[1], '', selected_empl==2, True
+                               [selected_password, False, selected_username, employee[0], employee[1], '',
+                                selected_empl == 2, True
                                    , selected_empl])
 
             new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))

@@ -176,11 +176,11 @@ class EmployeeDetailView(View):
         return redirect(self.success_url)
 
     def update_employee(self, request, pk):
-        form = EmployeeDetailForm(request.POST)
+        form = EmployeeDetailForm(request.POST, initial={'pk':pk})
         print(form.errors)
         if form.is_valid():
             params = []
-            selected_id = form.cleaned_data.get("id_employee")
+            selected_id = pk
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('employee_surname')
             params.append(selected_surname)
@@ -379,7 +379,7 @@ class ClientUpdateView(View):
         print(form.errors)
         if form.is_valid():
             params = []
-            selected_id = form.cleaned_data.get("card_number")
+            selected_id = pk
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('cust_surname')
             params.append(selected_surname)
@@ -782,11 +782,13 @@ class UserLoginView(View):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
-            login(request, user)
-            if next:
-                return redirect(next)
-            return redirect('/products')
-
+            if user is not None:
+                login(request, user)
+                if next:
+                    return redirect(next)
+                return redirect('/products')
+        else:
+            return render(request, self.template_name, {'form':form, 'msg':'Invalid username or password'})
 
 class UserRegisterView(View):
     template_name = 'registration/register.html'
@@ -830,7 +832,6 @@ class UserRegisterView(View):
             if next:
                 return redirect(next)
             return redirect('/')
-
         context = {
             'form': form,
         }

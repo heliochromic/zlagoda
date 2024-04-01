@@ -13,8 +13,7 @@
     <form method="POST" action="{% url 'employee-detail' pk=pk %}">
         {% csrf_token %}
         <label for="id_employee">Employee Id:</label>
-        {{ form.id_employee }}
-
+        {{ pk }}
         <label for="employee_surname">Employee Surname:</label>
         {{ form.employee_surname }}
 
@@ -35,10 +34,16 @@
 
         <label for="employee_date_of_start">Employee Date of Start:</label>
         {{ form.employee_date_of_start }}
-
+        {% for error in form.non_field_errors  %}
+            <div class="error">{{ error }}</div>
+        {% endfor %}
         <label for="employee_phone_number">Employee Phone Number:</label>
         {{ form.employee_phone_number }}
-
+        {% if form.employee_phone_number.errors %}
+         {% for error in form.employee_phone_number.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+        {% endif %}
         <label for="employee_city">Employee City:</label>
         {{ form.employee_city }}
 

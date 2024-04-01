@@ -176,7 +176,7 @@ class EmployeeDetailView(View):
         return redirect(self.success_url)
 
     def update_employee(self, request, pk):
-        form = EmployeeDetailForm(request.POST, initial={'pk':pk})
+        form = EmployeeDetailForm(request.POST, initial={'pk': pk})
         print(form.errors)
         if form.is_valid():
             params = []
@@ -450,10 +450,9 @@ class CategoryCreateView(View):
         })
 
     def post(self, request):
-        form = CategoryDetailForm(request.POST)
+        form = CategoryDetailForm(request.POST, initial={'pk': 0})
         if form.is_valid():
-            selected_name = form.cleaned_data.get('category_name')
-
+            selected_name = form.cleaned_data
             insert = """
                    INSERT INTO store_category (category_name) VALUES (%s);
                """
@@ -509,11 +508,10 @@ class CategoryUpdateView(View):
         return redirect(self.success_url)
 
     def update_category(self, request, pk):
-        form = CategoryDetailForm(request.POST)
-
+        form = CategoryDetailForm(request.POST, initial={"pk":pk})
+        print(form.errors)
         if form.is_valid():
-            selected_category = form.cleaned_data.get('category_name')
-
+            selected_category = form.cleaned_data
             update = '''
                     UPDATE store_category 
                     SET category_name = %s
@@ -788,7 +786,8 @@ class UserLoginView(View):
                     return redirect(next)
                 return redirect('/products')
         else:
-            return render(request, self.template_name, {'form':form, 'msg':'Invalid username or password'})
+            return render(request, self.template_name, {'form': form, 'msg': 'Invalid username or password'})
+
 
 class UserRegisterView(View):
     template_name = 'registration/register.html'
@@ -815,7 +814,8 @@ class UserRegisterView(View):
                                                         is_staff, is_active, date_joined, id_employee) 
                                                         VALUES (%s, %s, %s, %s, %s, %s, %s,%s, CURRENT_TIMESTAMP, %s)
                                """,
-                               [selected_password, False, selected_username, employee[0], employee[1], '', selected_empl==2, True
+                               [selected_password, False, selected_username, employee[0], employee[1], '',
+                                selected_empl == 2, True
                                    , selected_empl])
 
             new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))

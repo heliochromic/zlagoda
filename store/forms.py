@@ -122,6 +122,15 @@ class ClientDetailForm(forms.Form):
 class CategoryDetailForm(forms.Form):
     category_name = forms.CharField(label='Category Name', max_length=50)
 
+    def clean(self):
+        category_name = self.cleaned_data.get('category_name')
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM store_category WHERE category_name = %s", [category_name])
+            data = cursor.fetchall()
+            if len(data) > 0 and data[0][0] != self.initial['pk']:
+                raise forms.ValidationError("This category name already exists.")
+        return category_name
+
 
 class UserLoginForm(forms.Form):
     username = forms.CharField(max_length=20, help_text="Enter username")

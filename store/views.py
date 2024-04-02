@@ -863,4 +863,4 @@ def user_profile(request):
         employee['employee_city'] = data[0][9]
         employee['employee_street'] = data[0][10]
         employee['employee_zip_code'] = data[0][11]
-        return render(request, "profile/profile.html", {"user": employee})
+        return render(request, "profile/profile.html", {"employee": employee})

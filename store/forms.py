@@ -30,26 +30,56 @@ class EmployeeFilterForm(forms.Form):
 
 
 class EmployeeDetailForm(forms.Form):
-    id_employee = forms.CharField(max_length=10, help_text="Enter employee id")
+    id_employee = forms.CharField(max_length=10, help_text="Enter employee id", required=False)
     employee_name = forms.CharField(max_length=50, help_text="Enter employee name")
     employee_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
+
+    def clean_id_employee(self):
+        id_employee = self.cleaned_data['id_employee'] or self.initial['pk']
+        print("MGR" in id_employee)
+        if "CASH" not in id_employee and "MGR" not in id_employee:
+            raise forms.ValidationError("Employee ID has to start with CASH or MGR.")
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM store_employee WHERE id_employee = %s", [id_employee])
+            data = cursor.fetchall()
+            if len(data) > 0:
+                raise forms.ValidationError("This employee ID already exists.")
+        return id_employee
+
     employee_patronymic = forms.CharField(max_length=50, required=False,
                                           help_text="Enter patronymic")
-    employee_role = forms.CharField(max_length=10, help_text="Enter employee role")
+    ROLE_CHOICES = (
+        ('manager', 'manager'),
+        ('cashier', 'cashier'),
+    )
+    employee_role = forms.ChoiceField(choices=ROLE_CHOICES, help_text="Enter employee role")
     employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
     employee_date_of_birth = forms.DateField(help_text="Enter employee date of birth",
-                                             widget=forms.DateInput(attrs={'type': 'date'}))
+                                             widget=forms.DateInput(attrs={'type': 'date'})
+                                             )
     employee_date_of_start = forms.DateField(help_text="Enter date of employee work started",
                                              widget=forms.DateInput(attrs={'type': 'date'}))
-    employee_phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
 
-    def clean_phone_number(self):
-        employee_phone_number = self.cleaned_data['phone_number']
-        phone_number_pattern = r'^\+?1?\d{9,15}$'
-        if not re.match(phone_number_pattern, employee_phone_number):
-            raise forms.ValidationError("Please enter a valid phone number.")
-        return employee_phone_number
+    def clean(self):
+        cleaned_data = super().clean()
+        dob = cleaned_data.get('employee_date_of_birth')
+        start_date = cleaned_data.get('employee_date_of_start')
 
+        if dob and start_date:
+            age = start_date.year - dob.year - ((start_date.month, start_date.day) < (dob.month, dob.day))
+            if age < 18:
+                raise ValidationError("Employee must be at least 18 years old to start work.")
+
+        return cleaned_data
+
+    employee_phone_number = forms.RegexField(
+        regex=r'^\+\d{12}$',
+        max_length=13,
+        error_messages={
+            'regex': "Enter a valid phone number"
+        },
+        widget=forms.TextInput(attrs={'placeholder': '+123456789012'})
+    )
     employee_city = forms.CharField(max_length=50, help_text="Enter employee city")
     employee_street = forms.CharField(max_length=50, help_text="Enter employee street")
     employee_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code")
@@ -61,19 +91,28 @@ class ClientFilterForm(forms.Form):
 
 
 class ClientDetailForm(forms.Form):
-    card_number = forms.CharField(max_length=13, help_text="Enter employee id")
+    card_number = forms.CharField(max_length=13, help_text="Enter employee id", required=False)
+
+    def clean_card_number(self):
+        card_number = self.cleaned_data['card_number']
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM store_customer_card WHERE card_number = %s", [card_number])
+            data = cursor.fetchall()
+            if len(data) > 0:
+                raise forms.ValidationError("This card number already exists.")
+        return card_number
+
     cust_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
     cust_name = forms.CharField(max_length=50, help_text="Enter employee name")
     cust_patronymic = forms.CharField(max_length=50, required=False, help_text="Enter patronymic")
-    customer_phone_number = forms.CharField(max_length=13, help_text="Enter employee phone_number")
-
-    def clean_phone_number(self):
-        employee_phone_number = self.cleaned_data['phone_number']
-        phone_number_pattern = r'^\+?1?\d{9,15}$'
-        if not re.match(phone_number_pattern, employee_phone_number):
-            raise forms.ValidationError("Please enter a valid phone number.")
-        return employee_phone_number
-
+    customer_phone_number = forms.RegexField(
+        regex=r'^\+\d{12}$',
+        max_length=13,
+        error_messages={
+            'regex': "Enter a valid phone number"
+        },
+        widget=forms.TextInput(attrs={'placeholder': '+123456789012'})
+    )
     customer_city = forms.CharField(max_length=50, help_text="Enter employee city", required=False)
     customer_street = forms.CharField(max_length=50, help_text="Enter employee street", required=False)
     customer_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code", required=False)
@@ -82,6 +121,15 @@ class ClientDetailForm(forms.Form):
 
 class CategoryDetailForm(forms.Form):
     category_name = forms.CharField(label='Category Name', max_length=50)
+
+    def clean(self):
+        category_name = self.cleaned_data.get('category_name')
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM store_category WHERE category_name = %s", [category_name])
+            data = cursor.fetchall()
+            if len(data) > 0 and data[0][0] != self.initial['pk']:
+                raise forms.ValidationError("This category name already exists.")
+        return category_name
 
 
 class CheckDetailForm(forms.Form):

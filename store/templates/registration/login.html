@@ -18,6 +18,9 @@
 
       <label for="password">password:</label>
         {{ form.password }}
+        {% if msg %}
+        <p>{{ msg }}}</p>
+        {% endif %}
         <button type="submit" class="button">Log in</button>
     </form>
 <p><a href="{% url 'user-register' %}">Create new account</a></p>

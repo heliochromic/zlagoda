@@ -14,7 +14,9 @@
     {% csrf_token %}
     <label for="card_number">Customer ID:</label>
     {{ form.card_number }}
-
+    {% for error in form.card_number.errors %}
+            {{ error }}
+        {% endfor %}
     <label for="cust_name">Customer Name:</label>
     {{ form.cust_name }}
 
@@ -26,6 +28,11 @@
 
     <label for="customer_phone_number">Phone Number:</label>
     {{ form.customer_phone_number }}
+    {% if form.customer_phone_number.errors %}
+         {% for error in form.customer_phone_number.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+        {% endif %}
 
     <label for="customer_city">City:</label>
     {{ form.customer_city }}

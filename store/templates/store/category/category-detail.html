@@ -15,7 +15,9 @@
 
         <label for="category_name">Category Name:</label>
         {{ form.category_name }}
-
+        {% for error in form.non_field_errors %}
+            {{ error }}
+        {% endfor %}
         <button type="submit" class="button edit-btn">Edit</button>
     </form>
     <form method="POST" action="{% url 'category-detail' pk=pk %}">

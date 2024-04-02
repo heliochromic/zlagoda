@@ -14,7 +14,9 @@
     {% csrf_token %}
     <label for="id_employee">Employee ID:</label>
     {{ form.id_employee }}
-
+    {% for error in form.id_employee.errors %}
+            {{ error }}
+    {% endfor %}
     <label for="employee_name">Employee Name:</label>
     {{ form.employee_name }}
 
@@ -35,9 +37,16 @@
 
     <label for="employee_date_of_start">Date of Employment:</label>
     {{ form.employee_date_of_start }}
-
+    {% for error in form.non_field_errors  %}
+            <div class="error">{{ error }}</div>
+        {% endfor %}
     <label for="employee_phone_number">Phone Number:</label>
     {{ form.employee_phone_number }}
+     {% if form.employee_phone_number.errors %}
+         {% for error in form.employee_phone_number.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+        {% endif %}
 
     <label for="employee_city">City:</label>
     {{ form.employee_city }}

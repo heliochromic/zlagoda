@@ -177,11 +177,11 @@ class EmployeeDetailView(View):
         return redirect(self.success_url)
 
     def update_employee(self, request, pk):
-        form = EmployeeDetailForm(request.POST)
+        form = EmployeeDetailForm(request.POST, initial={'pk': pk})
         print(form.errors)
         if form.is_valid():
             params = []
-            selected_id = form.cleaned_data.get("id_employee")
+            selected_id = pk
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('employee_surname')
             params.append(selected_surname)
@@ -380,7 +380,7 @@ class ClientUpdateView(View):
         print(form.errors)
         if form.is_valid():
             params = []
-            selected_id = form.cleaned_data.get("card_number")
+            selected_id = pk
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('cust_surname')
             params.append(selected_surname)
@@ -451,10 +451,9 @@ class CategoryCreateView(View):
         })
 
     def post(self, request):
-        form = CategoryDetailForm(request.POST)
+        form = CategoryDetailForm(request.POST, initial={'pk': 0})
         if form.is_valid():
-            selected_name = form.cleaned_data.get('category_name')
-
+            selected_name = form.cleaned_data
             insert = """
                    INSERT INTO store_category (category_name) VALUES (%s);
                """
@@ -510,11 +509,10 @@ class CategoryUpdateView(View):
         return redirect(self.success_url)
 
     def update_category(self, request, pk):
-        form = CategoryDetailForm(request.POST)
-
+        form = CategoryDetailForm(request.POST, initial={"pk": pk})
+        print(form.errors)
         if form.is_valid():
-            selected_category = form.cleaned_data.get('category_name')
-
+            selected_category = form.cleaned_data
             update = '''
                     UPDATE store_category 
                     SET category_name = %s
@@ -882,10 +880,13 @@ class UserLoginView(View):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
-            login(request, user)
-            if next:
-                return redirect(next)
-            return redirect('/products')
+            if user is not None:
+                login(request, user)
+                if next:
+                    return redirect(next)
+                return redirect('/products')
+        else:
+            return render(request, self.template_name, {'form': form, 'msg': 'Invalid username or password'})
 
 
 class UserRegisterView(View):
@@ -931,7 +932,6 @@ class UserRegisterView(View):
             if next:
                 return redirect(next)
             return redirect('/')
-
         context = {
             'form': form,
         }
@@ -941,3 +941,26 @@ class UserRegisterView(View):
 def logout_view(request):
     logout(request)
     return redirect('/accounts/login')
+
+
+def user_profile(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""SELECT e.* 
+                       FROM auth_user a JOIN store_employee e ON a.id_employee = e.id_employee
+                       WHERE a.id = %s """, [request.user.id])
+        data = cursor.fetchall()
+        print(data)
+        employee = dict()
+        employee['id'] = data[0][0]
+        employee['employee_surname'] = data[0][1]
+        employee['employee_name'] = data[0][2]
+        employee['employee_patronymic'] = data[0][3]
+        employee['employee_role'] = data[0][4]
+        employee['employee_salary'] = data[0][5]
+        employee['employee_date_of_birth'] = data[0][6]
+        employee['employee_date_of_start'] = data[0][7]
+        employee['employee_phone_number'] = data[0][8]
+        employee['employee_city'] = data[0][9]
+        employee['employee_street'] = data[0][10]
+        employee['employee_zip_code'] = data[0][11]
+        return render(request, "profile/profile.html", {"user": employee})

@@ -78,7 +78,7 @@ class Customer_Card(models.Model):
     percent = models.IntegerField(help_text="Enter customer discount")
 
     def __str__(self):
-        return self.card_number
+        return f"{self.cust_surname} {self.cust_name}"
 
     def get_absolute_url(self):
         return reverse('client-details', args=[str(self.card_number)])

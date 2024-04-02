@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.core.exceptions import ValidationError
 from django.db import connection
 
-from .models import Category, Employee, Product
+from .models import Category, Employee, Product, Customer_Card
 
 
 class ProductFilterForm(forms.Form):
@@ -130,6 +130,31 @@ class CategoryDetailForm(forms.Form):
             if len(data) > 0 and data[0][0] != self.initial['pk']:
                 raise forms.ValidationError("This category name already exists.")
         return category_name
+
+
+class CheckDetailForm(forms.Form):
+    card_number = forms.ModelChoiceField(queryset=Customer_Card.objects.all(), required=False,
+                                         help_text="Enter card number associated with receipt")
+
+
+class CheckProductDetailForm(forms.Form):
+    product_upc = forms.CharField(label="Product UPC", max_length=12)
+    quantity = forms.IntegerField(label="Quantity")
+
+    def check_product_stock(self):
+        product_upc = self.cleaned_data.get('product_upc')
+        quantity = self.cleaned_data.get('quantity')
+
+        query = """
+        SELECT products_number FROM store_store_product WHERE "UPC" == %s;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(query, [product_upc])
+            store_quantity = cursor.fetchall()[0]
+
+        if quantity > store_quantity:
+            raise forms.ValidationError(f"Insufficient stock for product with UPC {product_upc}")
 
 
 class UserLoginForm(forms.Form):

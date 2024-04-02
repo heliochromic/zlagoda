@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Check
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <section id="add-check">
+        <form method="GET" action="{% url 'check-list' %}">
+            <label for="card_number">Customer Card:</label>
+            {{ form.card_number }}
+        </form>
+        <table>
+            <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Amount</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for product in all_products %}
+                <tr onclick="window.location='{% url 'check-product-detail' upc=product.0 %}'">
+                    <td>{{ product.0 }}</td>
+                    <td>{{ product.1 }}</td>
+                    <td>{{ product.2 }}</td>
+                    <td>{{ product.3 }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+{% endblock %}

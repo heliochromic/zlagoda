@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.db import connection
+from django.db import connection, transaction
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
@@ -367,7 +367,7 @@ class ClientUpdateView(View):
             return self.update_client(request, pk)
 
     def delete_client(self, request, pk):
-        delete = ('DELETE FROM store_customer_card WHERE card_number = %s')
+        delete = 'DELETE FROM store_customer_card WHERE card_number = %s'
 
         with connection.cursor() as cursor:
             cursor.execute(delete, [pk])
@@ -695,16 +695,21 @@ class StoreProductUpdateView(View):
 @method_decorator(login_required, name='dispatch')
 class CheckListView(View):
     template_name = 'store/check/check-list.html'
+    success_url = reverse_lazy('check-list')
 
     def get(self, request):
         employee_role = str(request.user.groups.all()[0])
         auth_user_id = request.user.id
         query = """
-        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
+        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - 
+        CASE 
+            WHEN sc.card_number_id IS NULL THEN 0
+            ELSE COALESCE(scc.percent, 0)
+        END) / 100, 2) AS discounted_price, 
             sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
         FROM store_check AS sc 
         INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
-        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
         """
 
         if employee_role == 'cashier':
@@ -731,69 +736,95 @@ class CheckListView(View):
 @method_decorator(login_required, name='dispatch')
 class CheckCreateView(View):
     template_name = 'store/check/check-add.html'
-    success_url = reverse_lazy('с-list')
+    success_url = reverse_lazy('check-list')
 
     def get(self, request):
+        selected_products = request.session.get('check_temporary_list')
+
         form = CheckDetailForm()
         all_products_query = """
-        SELECT sp.id_product, sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number 
+        SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number 
         FROM store_store_product AS ssp
         INNER JOIN public.store_product AS sp 
         ON sp.id_product = ssp.id_product_id
         """
 
         with connection.cursor() as cursor:
-            cursor.execute(all_products_query),
+            cursor.execute(all_products_query)
             all_products = cursor.fetchall()
 
         return render(request, template_name=self.template_name, context={
             'form': form,
+            'selected_products': selected_products,
             'all_products': all_products
         })
 
     def post(self, request):
-        selected_upc = request.POST.get('product_upc', None)
-        selected_amount = request.POST.get('quantity', None)
+        selected_products = request.session.get('check_temporary_list')
+        if selected_products:
+            if request.POST.get('action') != 'delete':
+                with transaction.atomic():
+                    with connection.cursor() as cursor:
+                        customer_card_number = request.POST.get('card_number', '')
+                        if customer_card_number == '':
+                            customer_card_number = None
 
-        check_temporary_list = request.session.get('check_temporary_list', [])
+                        sum_total = sum([product[2] * product[3] for product in selected_products])
+                        current_cashier = request.user.id
 
-        check_temporary_list.append((selected_upc, selected_amount))
+                        employee_id_query = "SELECT id_employee FROM auth_user WHERE id = %s"
 
-        request.session['check_temporary_list'] = check_temporary_list
+                        cursor.execute(employee_id_query, [current_cashier])
+                        current_employee_id = cursor.fetchall()[0][0]
 
-        # зроби запит, щоб витягалися всі дані про збережені продукти, та за натискання кнопки
-        # "add check" контекст видалявся, можна ще додати іншу кнопку чисто з "clean check"
-        form = CheckDetailForm()
-        all_products_query = """
-        SELECT sp.id_product, sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number 
-        FROM store_store_product AS ssp
-        INNER JOIN public.store_product AS sp 
-        ON sp.id_product = ssp.id_product_id
-        """
+                        cursor.execute("SELECT COUNT(*) FROM store_check")
+                        check_count = cursor.fetchone()[0]
 
-        with connection.cursor() as cursor:
-            cursor.execute(all_products_query),
-            all_products = cursor.fetchall()
+                        check_number = f'CHK{check_count + 1:05d}'
 
-        return render(request, template_name=self.template_name, context={
-            'form': form,
-            'selected_products': None,
-            'all_products': all_products
-        })
+                        check_insert_query = """
+                        INSERT INTO store_check(check_number, print_date, sum_total, vat, card_number_id, id_employee_id) 
+                        VALUES (%s, CURRENT_TIMESTAMP, %s, %s, %s, %s) 
+                        """
+
+                        cursor.execute(check_insert_query,
+                                       [check_number, sum_total, sum_total * 0.2, customer_card_number,
+                                        current_employee_id])
+
+                        for product in selected_products:
+                            product_upc = product[0]
+                            product_price = product[2]
+                            product_amount = product[3]
+
+                            product_insert = """
+                            INSERT INTO store_sale(product_number, selling_price, check_number_id, "UPC_id") 
+                            VALUES (%s, %s, %s, %s)
+                            """
+                            cursor.execute(product_insert, [product_amount, product_price, check_number, product_upc])
+
+                            store_product_update = """
+                            UPDATE store_store_product SET products_number = products_number - %s WHERE "UPC" = %s
+                            """
+                            cursor.execute(store_product_update, [product_amount, product_upc])
+
+            request.session['check_temporary_list'] = []
+
+        return redirect(self.success_url)
 
 
-
+@method_decorator(login_required, name='dispatch')
 class CheckProductDetailView(View):
     template_name = 'store/check/check-product-detail.html'
+    success_url = reverse_lazy('check-add')
 
     def get(self, request, upc):
         form = CheckProductDetailForm()
 
         product_query = """
-        SELECT sp.id_product, sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
+        SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
         INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
-        INNER JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
-        WHERE sp.id_product = %s;
+        LEFT JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
+        WHERE ssp."UPC" = %s;
         """
 
         with connection.cursor() as cursor:
@@ -805,13 +836,63 @@ class CheckProductDetailView(View):
             'product': product
         })
 
-    # def post(self, request, upc):
-    #
-    #     return render(request, template_name=self.template_name, context={
-    #         'form': form,
-    #     })
-        # if form.is_valid():
-        #     request.session.get('check_temp_list', [])
+    def post(self, request, upc):
+        form = CheckProductDetailForm(request.POST)
+
+        if form.is_valid():
+            quantity = int(form.cleaned_data.get('quantity'))
+            selected_upc = request.POST.get('product_upc', None)
+            selected_amount = request.POST.get('quantity', None)
+
+            check_temporary_list = request.session.get('check_temporary_list', [])
+
+            for product in check_temporary_list:
+                if product[0] == selected_upc:
+                    try:
+                        form.check_product_stock(product[3] + quantity, current_quantity=product[3])
+                    except:
+                        return redirect(reverse_lazy('check-product-detail', kwargs={'upc': selected_upc}))
+                    product[3] += quantity
+                    request.session['check_temporary_list'] = check_temporary_list
+                    return redirect(self.success_url)
+
+            selected_product_query = f"""
+            SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), %s
+            FROM store_store_product AS ssp
+            INNER JOIN public.store_product AS sp
+            ON sp.id_product = ssp.id_product_id
+            WHERE ssp."UPC" = %s
+            """
+
+            with connection.cursor() as cursor:
+                cursor.execute(selected_product_query, [int(selected_amount), selected_upc])
+                selected_product = cursor.fetchall()[0]
+
+            selected_product = list(selected_product)
+            selected_product[2] = float(selected_product[2])
+            check_temporary_list.append(selected_product)
+
+            request.session['check_temporary_list'] = check_temporary_list
+
+            print(request.session['check_temporary_list'])
+            return redirect(self.success_url)
+        else:
+            product_query = """
+            SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
+            INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
+            INNER JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
+            WHERE ssp."UPC" = %s;
+            """
+
+            with connection.cursor() as cursor:
+                cursor.execute(product_query, [upc])
+                product = cursor.fetchall()
+
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'product': product
+            })
+
 
 @method_decorator(login_required, name='dispatch')
 class CheckDetailsView(View):
@@ -819,36 +900,37 @@ class CheckDetailsView(View):
 
     def get(self, request, pk):
         query = """
-        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
+        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - 
+        CASE 
+            WHEN sc.card_number_id IS NULL THEN 0
+            ELSE COALESCE(scc.percent, 0)
+        END) / 100, 2) AS discounted_price, 
             sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
         FROM store_check AS sc 
         INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
-        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
         WHERE sc.check_number = %s
         """
 
         all_products_query = """
-        SELECT
-            ss."UPC_id",
-            upc_pn.product_name,
-            ss.product_number,
-            ROUND(ss.selling_price, 2),
-            COALESCE(cp.percent, 0) AS percent,
-            ROUND((ss.product_number * ss.selling_price) * (100 - percent) / 100, 2) AS discounted_price
-        FROM store_sale AS ss
-        INNER JOIN (SELECT ssp."UPC", sp.product_name
-                    FROM store_store_product AS ssp
-                    INNER JOIN store_product AS sp
-                    ON ssp.id_product_id = sp.id_product
-        ) AS upc_pn
-        ON ss."UPC_id" = upc_pn."UPC"
-        LEFT JOIN (SELECT sc.check_number, scc.percent
-                    FROM store_check AS sc
-                    INNER JOIN store_customer_card AS scc
-                    ON sc.card_number_id = scc.card_number
-        ) AS cp
-        ON ss.check_number_id = cp.check_number
-        WHERE ss.check_number_id = %s;
+        SELECT 
+            sc.check_number, 
+            sc.print_date, 
+            ROUND((sc.sum_total) * (100 - 
+        CASE 
+            WHEN sc.card_number_id IS NULL THEN 0
+            ELSE COALESCE(scc.percent, 0)
+        END) / 100, 2) AS discounted_price, 
+            sc.card_number_id, 
+            concat(se.empl_name, ' ', se.empl_surname) 
+        FROM 
+            store_check AS sc 
+        INNER JOIN 
+            store_employee AS se ON sc.id_employee_id = se.id_employee
+        LEFT JOIN 
+            store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        WHERE 
+            sc.check_number = %s
         """
 
         with connection.cursor() as cursor:

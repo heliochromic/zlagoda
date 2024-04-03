@@ -138,23 +138,32 @@ class CheckDetailForm(forms.Form):
 
 
 class CheckProductDetailForm(forms.Form):
-    product_upc = forms.CharField(label="Product UPC", max_length=12)
-    quantity = forms.IntegerField(label="Quantity")
+    product_upc = forms.CharField(label="Product ID", max_length=12)
+    quantity = forms.IntegerField(label="Quantity", help_text="Enter a quantity that is less than the one in stock")
 
-    def check_product_stock(self):
-        product_upc = self.cleaned_data.get('product_upc')
-        quantity = self.cleaned_data.get('quantity')
+    def check_product_stock(self, quantity, current_quantity=0):
+        product_upc= self.cleaned_data.get('product_upc')
+        # quantity = self.cleaned_data.get('quantity')
 
         query = """
-        SELECT products_number FROM store_store_product WHERE "UPC" == %s;
+        SELECT products_number FROM store_store_product WHERE "UPC" = %s;
         """
 
         with connection.cursor() as cursor:
             cursor.execute(query, [product_upc])
-            store_quantity = cursor.fetchall()[0]
+            store_quantity = cursor.fetchall()[0][0]
 
-        if quantity > store_quantity:
-            raise forms.ValidationError(f"Insufficient stock for product with UPC {product_upc}")
+        print(product_upc)
+        print(store_quantity)
+
+        if quantity > int(store_quantity):
+            raise forms.ValidationError(f"Only {store_quantity - quantity} units of this product are left in stock")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        quantity = self.cleaned_data.get('quantity')
+        self.check_product_stock(quantity)
+        return cleaned_data
 
 
 class UserLoginForm(forms.Form):

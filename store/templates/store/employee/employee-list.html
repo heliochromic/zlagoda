@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block css_files %}
-
+    
 {% endblock %}
 
 {% block content %}
@@ -18,10 +18,10 @@
             <label for="employee_role">Role:</label>
             {{ form.employee_role }}
 
-            <button type="submit" class="filter-button">Filter</button>
+            <button type="submit" class="button filter-btn">Filter</button>
         </form>
         <a href="{% url 'employee-add' %}">
-            <div class="add-button">
+            <div class="button add-btn">
                 Add Employee
             </div>
         </a>

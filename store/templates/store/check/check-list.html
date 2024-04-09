@@ -11,11 +11,13 @@
 
 {% block content %}
     <section id="all-checks">
-        <a href="{% url 'check-add' %}">
-            <div class="button">
-                Add Check
-            </div>
-        </a>
+        {% if user.groups.first.name == "cashier" %}
+            <a href="{% url 'check-add' %}">
+                <div class="button">
+                    Add Check
+                </div>
+            </a>
+        {% endif %}
         <table>
             <thead>
             <tr>

@@ -900,11 +900,11 @@ class CheckDetailsView(View):
 
     def get(self, request, pk):
         query = """
-        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - 
+        SELECT sc.check_number, sc.print_date, ROUND(sc.sum_total, 2), ROUND((sc.sum_total) * (100 - 
         CASE 
             WHEN sc.card_number_id IS NULL THEN 0
             ELSE COALESCE(scc.percent, 0)
-        END) / 100, 2) AS discounted_price, 
+        END) / 100, 2) AS discounted_price, scc.percent, 
             sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
         FROM store_check AS sc 
         INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
@@ -914,23 +914,16 @@ class CheckDetailsView(View):
 
         all_products_query = """
         SELECT 
-            sc.check_number, 
-            sc.print_date, 
-            ROUND((sc.sum_total) * (100 - 
-        CASE 
-            WHEN sc.card_number_id IS NULL THEN 0
-            ELSE COALESCE(scc.percent, 0)
-        END) / 100, 2) AS discounted_price, 
-            sc.card_number_id, 
-            concat(se.empl_name, ' ', se.empl_surname) 
-        FROM 
-            store_check AS sc 
-        INNER JOIN 
-            store_employee AS se ON sc.id_employee_id = se.id_employee
-        LEFT JOIN 
-            store_customer_card AS scc ON sc.card_number_id = scc.card_number
-        WHERE 
-            sc.check_number = %s
+            ss."UPC_id", ps.product_name, ss.product_number, ss.selling_price
+        FROM
+            store_sale AS ss
+        INNER JOIN (SELECT sp.product_name, ssp."UPC" 
+                    FROM store_product AS sp 
+                    INNER JOIN store_store_product AS ssp 
+                    ON sp.id_product = ssp.id_product_id) AS ps
+        ON ps."UPC" = ss."UPC_id"
+        WHERE
+            ss.check_number_id = %s
         """
 
         with connection.cursor() as cursor:

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-    All Employees
+    All Clients
 {% endblock %}
 
 {% block css_files %}
@@ -18,10 +18,10 @@
             <label for="client_discount">Discount:</label>
             {{ form.client_discount }}
 
-            <button type="submit" class="filter-button">Filter</button>
+            <button type="submit" class="button filter-btn">Filter</button>
         </form>
         <a href="{% url 'client-add' %}">
-            <div class="add-button">
+            <div class="button">
                 Add Client
             </div>
         </a>

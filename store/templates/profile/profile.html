@@ -45,4 +45,9 @@
 
         <p for="employee_zip_code">Your Zip Code:</p>
         {{ employee.employee_zip_code }}
+
+        <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+        </form>
 {% endblock %}

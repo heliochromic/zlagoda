@@ -39,5 +39,7 @@ urlpatterns = [
     path('accounts/login/', views.UserLoginView.as_view(), name='user-login'),
     path('accounts/register/', views.UserRegisterView.as_view(), name='user-register'),
     path('accounts/logout/', views.logout_view, name='logout'),
-    path('accounts/profile/', views.user_profile, name='user-profile')
+    path('accounts/profile/', views.user_profile, name='user-profile'),
+
+    path('statistics/', views.statistics, name='statistics')
 ]

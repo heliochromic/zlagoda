@@ -188,3 +188,9 @@ tbody tr:hover {
 .add-form .button {
     margin-left: 120px;
 }
+
+@media print {
+    header *:not(h1) {
+        display: none !important;
+    }
+}

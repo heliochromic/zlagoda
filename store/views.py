@@ -1046,3 +1046,5 @@ def user_profile(request):
         employee['employee_street'] = data[0][10]
         employee['employee_zip_code'] = data[0][11]
         return render(request, "profile/profile.html", {"employee": employee})
+def statistics(request):
+    pass

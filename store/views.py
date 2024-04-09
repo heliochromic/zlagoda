@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.db import connection, transaction
+from django.db import connection, transaction, IntegrityError
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
@@ -500,13 +500,16 @@ class CategoryUpdateView(View):
             return self.update_category(request, pk)
 
     def delete_category(self, request, pk):
-        delete = 'DELETE FROM store_category WHERE category_number = %s'
+        try:
+            delete = 'DELETE FROM store_category WHERE category_number = %s'
 
-        with connection.cursor() as cursor:
-            cursor.execute(delete, [pk])
+            with connection.cursor() as cursor:
+                cursor.execute(delete, [pk])
 
-        messages.success(request, 'Category deleted successfully')
-        return redirect(self.success_url)
+            messages.success(request, 'Category deleted successfully')
+            return redirect(self.success_url)
+        except IntegrityError:
+            return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
     def update_category(self, request, pk):
         form = CategoryDetailForm(request.POST, initial={"pk": pk})
@@ -1046,5 +1049,7 @@ def user_profile(request):
         employee['employee_street'] = data[0][10]
         employee['employee_zip_code'] = data[0][11]
         return render(request, "profile/profile.html", {"employee": employee})
+
+
 def statistics(request):
     pass

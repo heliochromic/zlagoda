@@ -18,6 +18,9 @@
         {% for error in form.non_field_errors %}
             {{ error }}
         {% endfor %}
+        {% if request.GET.submit == 'No' %}
+        <p>Can't delete category until you delete every product of this category</p>
+        {% endif %}
         <button type="submit" class="button edit-btn">Edit</button>
     </form>
     <form method="POST" action="{% url 'category-detail' pk=pk %}">

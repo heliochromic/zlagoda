@@ -6,10 +6,11 @@
 {% endblock %}
 
 {% block css_files %}
-    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'store/profile.css' %}">
 {% endblock %}
 
 {% block content %}
+<div>
         {% csrf_token %}
         <p for="id_employee">Your Id:</p>
         {{ employee.id }}
@@ -50,4 +51,5 @@
         {% csrf_token %}
         <button type="submit">Logout</button>
         </form>
+</div>
 {% endblock %}

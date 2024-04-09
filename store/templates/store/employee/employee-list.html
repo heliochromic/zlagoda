@@ -4,9 +4,14 @@
 {% block title %}
     All Employees
 {% endblock %}
-
 {% block css_files %}
-    
+    <style>
+        @media print {
+            section form, a {
+                display: none !important;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}

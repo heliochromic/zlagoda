@@ -51,3 +51,8 @@ form button.button {
     margin: 20px auto; /* Center the button horizontally */
     text-align: center; /* Center the text inside the button */
 }
+@media print {
+    #all-products > form {
+        display: none;
+    }
+}

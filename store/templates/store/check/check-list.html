@@ -6,7 +6,13 @@
 {% endblock %}
 
 {% block css_files %}
-
+<style>
+        @media print {
+            section a {
+                display: none !important;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}

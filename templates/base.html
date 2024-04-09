@@ -7,6 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static "app.css" %}">
+    <style>
+        @media print {
+            header nav {
+                display: none !important;
+            }
+        }
+    </style>
     {% block css_files %}{% endblock %}
 </head>
 <body>

@@ -141,9 +141,8 @@ class CheckProductDetailForm(forms.Form):
     product_upc = forms.CharField(label="Product ID", max_length=12)
     quantity = forms.IntegerField(label="Quantity", help_text="Enter a quantity that is less than the one in stock")
 
-    def check_product_stock(self, quantity, current_quantity=0):
-        product_upc= self.cleaned_data.get('product_upc')
-        # quantity = self.cleaned_data.get('quantity')
+    def check_product_stock(self, quantity):
+        product_upc = self.cleaned_data.get('product_upc')
 
         query = """
         SELECT products_number FROM store_store_product WHERE "UPC" = %s;
@@ -163,6 +162,35 @@ class CheckProductDetailForm(forms.Form):
         cleaned_data = super().clean()
         quantity = self.cleaned_data.get('quantity')
         self.check_product_stock(quantity)
+        return cleaned_data
+
+
+class CheckFilter(forms.Form):
+    start_date = forms.DateField(label='Start Date', widget=forms.DateInput(attrs={'type': 'date'}), required=False)
+    end_date = forms.DateField(label='End Date', widget=forms.DateInput(attrs={'type': 'date'}), required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(CheckFilter, self).__init__(*args, **kwargs)
+
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT id_employee, empl_name, empl_surname FROM store_employee WHERE empl_role = %s
+            """, ['Cashier'])
+            cashier_employees = cursor.fetchall()
+
+        choices = [(emp[0], f"{emp[1]} {emp[2]}") for emp in cashier_employees]
+        choices.insert(0, (None, "default"))
+
+        self.fields['employee'] = forms.ChoiceField(choices=choices, label='Select Cashier', required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError("End date must be after the start date.")
+
         return cleaned_data
 
 

@@ -49,7 +49,7 @@
 
         <form action="{% url 'logout' %}" method="post">
         {% csrf_token %}
-        <button type="submit">Logout</button>
+        <button type="submit" class="button delete-btn">Log out</button>
         </form>
 </div>
 {% endblock %}

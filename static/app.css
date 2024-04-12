@@ -188,3 +188,9 @@ tbody tr:hover {
 .add-form .button {
     margin-left: 120px;
 }
+
+#charts-container {
+    width: 600px;
+    height: 600px;
+    text-align: center;
+}

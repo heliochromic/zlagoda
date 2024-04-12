@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm, CheckProductDetailForm, \
-    CheckDetailForm
+    CheckDetailForm, CheckFilter
 
 
 # Create your views here
@@ -701,37 +701,58 @@ class CheckListView(View):
     success_url = reverse_lazy('check-list')
 
     def get(self, request):
-        employee_role = str(request.user.groups.all()[0])
-        auth_user_id = request.user.id
+        form = CheckFilter(request.GET)
+        employee_role = request.user.groups.first().name if request.user.groups.exists() else None
+
         query = """
-        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - 
-        CASE 
-            WHEN sc.card_number_id IS NULL THEN 0
-            ELSE COALESCE(scc.percent, 0)
-        END) / 100, 2) AS discounted_price, 
-            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
-        FROM store_check AS sc 
-        INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
-        LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+            SELECT sc.check_number, sc.print_date, 
+                ROUND((sc.sum_total) * (100 - COALESCE(scc.percent, 0)) / 100, 2) AS discounted_price, 
+                sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) AS employee_name
+            FROM store_check AS sc 
+            INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+            LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
         """
+        query_params = []
 
-        if employee_role == 'cashier':
-            query += "WHERE se.id_employee = %s;"
+        if form.is_valid():
+            query += " WHERE 1=1"
+            employee_id = form.cleaned_data.get("employee")
 
-            employee_id_query = "SELECT id_employee FROM auth_user WHERE id = %s"
+            if employee_role == 'cashier' or employee_id:
+                if employee_role == 'cashier':
+                    query += " AND se.id_employee = (SELECT id_employee FROM auth_user WHERE id = %s)"
+                    query_params.append(request.user.id)
 
-            with connection.cursor() as cursor:
-                cursor.execute(employee_id_query, [auth_user_id])
-                employee_id = cursor.fetchall()
-                cursor.execute(query, [employee_id[0]])
-                checks = cursor.fetchall()
+                if employee_id:
+                    query += " AND se.id_employee = %s"
+                    query_params.append(employee_id)
 
+            start_date = form.cleaned_data.get('start_date')
+            end_date = form.cleaned_data.get('end_date')
+
+            if start_date:
+                query += " AND sc.print_date >= %s"
+                query_params.append(start_date)
+
+            if end_date:
+                query += " AND sc.print_date <= %s"
+                query_params.append(end_date)
         else:
             with connection.cursor() as cursor:
-                cursor.execute(query)
+                cursor.execute(query, query_params)
                 checks = cursor.fetchall()
 
+            return render(request, template_name=self.template_name, context={
+                'form': CheckFilter(),
+                'checks': checks
+            })
+
+        with connection.cursor() as cursor:
+            cursor.execute(query, query_params)
+            checks = cursor.fetchall()
+
         return render(request, template_name=self.template_name, context={
+            'form': form,
             'checks': checks
         })
 
@@ -1044,5 +1065,57 @@ def user_profile(request):
         return render(request, "profile/profile.html", {"employee": employee})
 
 
-def statistics(request):
-    pass
+class StatisticsTab(View):
+    def get(self, request):
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.id_product, p.product_name, SUM(s.selling_price * s.product_number) AS total_revenue
+                FROM store_product p JOIN store_store_product sp ON p.id_product = sp.id_product_id
+                                     JOIN store_sale s ON sp."UPC" = s."UPC_id"
+                GROUP BY 1, 2
+                ORDER BY total_revenue DESC LIMIT 10
+            """)
+            top_10_products_with_biggest_revenue = cursor.fetchall()  # топ 10 продуктів, що дали найбільшу виручку за весь час
+
+            cursor.execute("""
+                SELECT p.id_product, p.product_name
+                FROM store_product p JOIN store_store_product sp ON p.id_product = sp.id_product_id
+                                     JOIN store_sale s ON sp."UPC" = s."UPC_id"
+                WHERE sp."UPC" NOT IN ( SELECT "UPC_id"
+                                        FROM store_sale s JOIN store_check c ON s.check_number_id = c.check_number
+                                        WHERE c.print_date NOT IN ( SELECT print_date
+                                                                    FROM store_check
+                                                                    WHERE print_date < CURRENT_DATE - INTERVAL %s
+                                                                  )
+                      )
+            """)
+            not_purchased_products_within_date = cursor.fetchall()  # продукти, що ніхто не купив за певний час
+
+            cursor.execute("""
+                SELECT CONCAT(e.empl_name, ' ', e.empl_surname) AS cashier_name, SUM(c.sum_total) AS total_sales
+                FROM store_employee e 
+                JOIN store_check c ON e.id_employee = c.id_employee_id
+                GROUP BY e.empl_name, e.empl_surname
+                ORDER BY total_sales DESC LIMIT 5;
+            """)
+            most_productive_cashiers = cursor.fetchall()  # топ 5 касирів, що продали на найбільшу суму за весь час
+
+            cursor.execute("""
+                SELECT DISTINCT CONCAT(scc.cust_name, ' ', scc.cust_surname)
+                FROM store_customer_card scc
+                LEFT JOIN store_check sc ON scc.card_number = sc.card_number_id
+                WHERE scc.card_number NOT IN (
+                        SELECT  c.card_number_id
+                        FROM store_check c
+                        WHERE c.print_date NOT IN (
+                                SELECT print_date
+                                FROM store_check
+                                WHERE print_date < CURRENT_DATE - INTERVAL '5 days'
+                        )
+                );
+            """)
+            not_active_customers_within_date = cursor.fetchall() #кастомери, які нічого не купували за певний час
+
+        return render(request, 'store/statistics/statistics.html', context={
+
+        })

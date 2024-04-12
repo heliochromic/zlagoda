@@ -1,4 +1,4 @@
-{% load static %}
+ {% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -24,8 +24,6 @@
             {% if user.is_authenticated %}
             {% if user.groups.first.name == "manager" %}
             <li><a href="{% url 'statistics' %}">Stats</a></li>
-            {% endif %}
-            {% if user.groups.first.name == "manager" %}
             <li><a href="{% url 'employee-list' %}">Employee</a></li>
             {% endif %}
             <li><a href="{% url 'client-list' %}">Client</a></li>

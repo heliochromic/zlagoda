@@ -41,5 +41,5 @@ urlpatterns = [
     path('accounts/logout/', views.logout_view, name='logout'),
     path('accounts/profile/', views.user_profile, name='user-profile'),
 
-    path('statistics/', views.statistics, name='statistics')
+    path('statistics/', views.StatisticsTab.as_view(), name='statistics')
 ]

@@ -17,6 +17,17 @@
 
 {% block content %}
     <section id="all-checks">
+        <form method="GET" action="{% url 'check-list' %}">
+            <label for="start_date">From:</label>
+            {{ form.start_date }}
+            <label for="end_date">To:</label>
+            {{ form.end_date }}
+            {% if user.groups.first.name == "manager" %}
+            <label for="employee">Cashier:</label>
+            {{ form.employee }}
+            {% endif %}
+            <button type="submit" class="button filter-btn">Filter</button>
+        </form>
         {% if user.groups.first.name == "cashier" %}
             <a href="{% url 'check-add' %}">
                 <div class="button">

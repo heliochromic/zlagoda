@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -9,7 +11,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm, CheckProductDetailForm, \
-    CheckDetailForm, CheckFilter
+    CheckDetailForm, CheckFilter, StatsDateOptions
 
 
 # Create your views here
@@ -865,8 +867,8 @@ class CheckProductDetailView(View):
 
         if form.is_valid():
             quantity = int(form.cleaned_data.get('quantity'))
-            selected_upc = request.POST.get('product_upc', None)
-            selected_amount = request.POST.get('quantity', None)
+            selected_upc = request.POST.get('product_upc')
+            selected_amount = request.POST.get('quantity')
 
             check_temporary_list = request.session.get('check_temporary_list', [])
 
@@ -1067,30 +1069,46 @@ def user_profile(request):
 
 class StatisticsTab(View):
     def get(self, request):
+        form = StatsDateOptions(request.GET)
+
+        not_purchased_products_date = form.cleaned_data.get('products_date') if form.is_valid() else None
+        not_active_customers_date = form.cleaned_data.get('customers_date') if form.is_valid() else None
+
+        not_purchased_products_date = not_purchased_products_date or date(1900, 1, 1)
+        not_active_customers_date = not_active_customers_date or date(1900, 1, 1)
+
         with connection.cursor() as cursor:
+            # Query for top 10 products by revenue
             cursor.execute("""
                 SELECT p.id_product, p.product_name, SUM(s.selling_price * s.product_number) AS total_revenue
                 FROM store_product p JOIN store_store_product sp ON p.id_product = sp.id_product_id
                                      JOIN store_sale s ON sp."UPC" = s."UPC_id"
                 GROUP BY 1, 2
                 ORDER BY total_revenue DESC LIMIT 10
-            """)
-            top_10_products_with_biggest_revenue = cursor.fetchall()  # топ 10 продуктів, що дали найбільшу виручку за весь час
+                        """)
+            top_10_products_with_biggest_revenue = cursor.fetchall()
+            chart_1_labels = [row[1] for row in top_10_products_with_biggest_revenue]
+            chart_1_values = [float(row[2]) for row in top_10_products_with_biggest_revenue]
 
+            # Query for products that were not purchased within a specific date range
             cursor.execute("""
-                SELECT p.id_product, p.product_name
+                SELECT DISTINCT p.product_name
                 FROM store_product p JOIN store_store_product sp ON p.id_product = sp.id_product_id
                                      JOIN store_sale s ON sp."UPC" = s."UPC_id"
-                WHERE sp."UPC" NOT IN ( SELECT "UPC_id"
-                                        FROM store_sale s JOIN store_check c ON s.check_number_id = c.check_number
-                                        WHERE c.print_date NOT IN ( SELECT print_date
-                                                                    FROM store_check
-                                                                    WHERE print_date < CURRENT_DATE - INTERVAL %s
-                                                                  )
-                      )
-            """)
-            not_purchased_products_within_date = cursor.fetchall()  # продукти, що ніхто не купив за певний час
+                WHERE sp."UPC" NOT IN ( 
+                    SELECT "UPC_id"
+                    FROM store_sale s JOIN store_check c ON s.check_number_id = c.check_number
+                    WHERE c.print_date NOT IN ( 
+                        SELECT print_date
+                        FROM store_check
+                        WHERE print_date < %s
+                    )
+                )
+            """, [not_purchased_products_date])
+            not_purchased_products_within_date = cursor.fetchall()
+            list_1 = [row[0] for row in not_purchased_products_within_date]
 
+            # Query for top 5 most productive cashiers
             cursor.execute("""
                 SELECT CONCAT(e.empl_name, ' ', e.empl_surname) AS cashier_name, SUM(c.sum_total) AS total_sales
                 FROM store_employee e 
@@ -1098,24 +1116,34 @@ class StatisticsTab(View):
                 GROUP BY e.empl_name, e.empl_surname
                 ORDER BY total_sales DESC LIMIT 5;
             """)
-            most_productive_cashiers = cursor.fetchall()  # топ 5 касирів, що продали на найбільшу суму за весь час
+            most_productive_cashiers = cursor.fetchall()
+            chart_2_labels = [row[0] for row in most_productive_cashiers]
+            chart_2_values = [float(row[1]) for row in most_productive_cashiers]
 
+            # Query for inactive customers within a specific date range
             cursor.execute("""
                 SELECT DISTINCT CONCAT(scc.cust_name, ' ', scc.cust_surname)
                 FROM store_customer_card scc
                 LEFT JOIN store_check sc ON scc.card_number = sc.card_number_id
                 WHERE scc.card_number NOT IN (
-                        SELECT  c.card_number_id
+                        SELECT c.card_number_id
                         FROM store_check c
                         WHERE c.print_date NOT IN (
                                 SELECT print_date
                                 FROM store_check
-                                WHERE print_date < CURRENT_DATE - INTERVAL '5 days'
+                                WHERE print_date < %s
                         )
                 );
-            """)
-            not_active_customers_within_date = cursor.fetchall() #кастомери, які нічого не купували за певний час
+            """, [not_active_customers_date])
+            not_active_customers_within_date = cursor.fetchall()
+            list_2 = [row[0] for row in not_active_customers_within_date]
 
-        return render(request, 'store/statistics/statistics.html', context={
-
+        return render(request, 'store/statistics/statistics.html', {
+            'form': form,
+            'chart_1_labels': chart_1_labels,
+            'chart_1_values': chart_1_values,
+            'chart_2_labels': chart_2_labels,
+            'chart_2_values': chart_2_values,
+            'list_1': list_1,
+            'list_2': list_2
         })

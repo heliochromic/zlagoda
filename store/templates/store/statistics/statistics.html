@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/stats.css' %}">
     <style>
         @media print {
             section form, a {
@@ -17,23 +18,84 @@
 {% endblock %}
 
 {% block content %}
-    <div id="charts-container">
-        <label>Top 10 products with biggest revenue</label>
-        <canvas id="chart1"></canvas>
-    </div>
-
+    <section id="statistics">
+        <div class="container">
+            <div class="charts-container">
+                <label>Top 10 products with biggest revenue</label>
+                <canvas id="chart-1"></canvas>
+                <label>Top 5 cashiers with biggest revenue</label>
+                <canvas id="chart-2"></canvas>
+            </div>
+            <div class="lists-container">
+                <form method="GET" action="{% url 'statistics' %}">
+                    <div class="form-group">
+                        <button type="submit" class="button">Update Lists</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="products_date">List of products that have not been purchased during ...</label>
+                        <input type="date" id="products_date" name="products_date" class="form-control"
+                               value="{{ form.products_date.value }}">
+                        <div>
+                            <ul>
+                                {% for item in list_1 %}
+                                    <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="customers_date">List of customers that have not visited Zlagoda during ...</label>
+                        <input type="date" id="customers_date" name="customers_date" class="form-control"
+                               value="{{ form.customers_date.value }}">
+                        <div>
+                            <div>
+                                <ul>
+                                    {% for item in list_2 %}
+                                        <li>{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
 
     <script>
-        var ctx = document.getElementById('chart1').getContext('2d');
-        var myChart = new Chart(ctx, {
+        console.log({{ chart_1_values|safe }})
+        let chart_1 = document.getElementById('chart-1').getContext('2d');
+        let c_1 = new Chart(chart_1, {
             type: 'bar',
             data: {
-                labels: {{ labels|safe }},
+                labels: {{ chart_1_labels|safe }},
                 datasets: [{
-                    label: 'Values',
-                    data: {{ values|safe }},
+                    label: 'USD',
+                    data: {{ chart_1_values|safe }},
                     backgroundColor: 'rgba(54, 162, 235, 0.6)',
                     borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        let chart_2 = document.getElementById('chart-2').getContext('2d');
+        let c_2 = new Chart(chart_2, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_2_labels|safe }},
+                datasets: [{
+                    label: 'USD',
+                    data: {{ chart_2_values|safe }},
+                    backgroundColor: 'rgba(54,235,90,0.6)',
+                    borderColor: 'rgb(54,235,78)',
                     borderWidth: 1
                 }]
             },

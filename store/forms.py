@@ -1,5 +1,4 @@
-import re
-
+from datetime import date
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.core.exceptions import ValidationError
@@ -245,3 +244,29 @@ class UserRegisterForm(forms.Form):
             querys = cursor.fetchall()
         choices = [(row[0], row[1] + " " + row[2]) for row in querys]
         self.fields['empl'].choices = choices
+
+
+class StatsDateOptions(forms.Form):
+    products_date = forms.DateField(
+        help_text="The date during which a certain list of products was not purchased",
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=False
+    )
+    customers_date = forms.DateField(
+        help_text="Date for the list of customers who have not visited the store for a certain period of time",
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=False
+    )
+
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     products_date = cleaned_data.get('products_date')
+    #     customers_date = cleaned_data.get('customers_date')
+    #
+    #     if products_date is None or products_date > date.today():
+    #         self.add_error('products_date', "Invalid products date. Please select a valid date.")
+    #
+    #     if customers_date is None or customers_date > date.today():
+    #         self.add_error('customers_date', "Invalid customers date. Please select a valid date.")
+    #
+    #     return cleaned_data

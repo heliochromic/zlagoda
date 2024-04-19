@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Employee
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<form method="POST" action="{% url 'client-add' %}">
+    {% csrf_token %}
+    <label for="card_number">Customer ID:</label>
+    {{ form.card_number }}
+
+    <label for="cust_name">Customer Name:</label>
+    {{ form.cust_name }}
+
+    <label for="cust_surname">Customer Surname:</label>
+    {{ form.cust_surname }}
+
+    <label for="cust_patronymic">Customer Patronymic:</label>
+    {{ form.cust_patronymic }}
+
+    <label for="customer_phone_number">Phone Number:</label>
+    {{ form.customer_phone_number }}
+
+    <label for="customer_city">City:</label>
+    {{ form.customer_city }}
+
+    <label for="customer_street">Street:</label>
+    {{ form.customer_street }}
+
+    <label for="customer_zip_code">Zip Code:</label>
+    {{ form.customer_zip_code }}
+
+    <label for="customer_discount_percent">Discount Percent:</label>
+    {{ form.customer_discount_percent }}
+
+    <button type="submit" class="add-button">Add</button>
+</form>
+{% endblock %}

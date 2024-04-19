@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Category
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <form method="POST" action="{% url 'category-add' %}">
+        {% csrf_token %}
+    
+        <label for="product_name">Category Name:</label>
+        {{ form.category_name }}
+
+        <button type="submit" class="button">Add</button>
+    </form>
+{% endblock %}

@@ -1,21 +1,28 @@
+import decimal
+
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.db import connection
+from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
 from django.contrib import messages
 from django.urls import reverse_lazy
+from .forms import (ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
+                    ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm,
+                    StoreProductFilterForm, \
+                    StoreProductDetailForm, StorePromotionalProductDetailForm, StorePromotionalProductUpdateForm)
 
-from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
-    ClientFilterForm, ClientDetailForm
 
-
-# Create your views here.
-
+# Create your views here
 def index(request):
-    return redirect('product_list')
+    return redirect('product-list')
 
 
+@method_decorator(login_required, name='dispatch')
 class EmployeeListView(View):
-    template_name = 'store/employee-list.html'
+    template_name = 'store/employee/employee-list.html'
 
     def get(self, request):
         form = EmployeeFilterForm(request.GET)
@@ -61,9 +68,10 @@ class EmployeeListView(View):
         })
 
 
+@method_decorator(login_required, name='dispatch')
 class EmployeeCreateView(View):
-    template_name = 'store/employee-add.html'
-    success_url = reverse_lazy('employee_list')  # Assuming 'product_list' is the name of your product list URL
+    template_name = 'store/employee/employee-add.html'
+    success_url = reverse_lazy('employee-list')  # Assuming 'product_list' is the name of your product list URL
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -113,9 +121,10 @@ class EmployeeCreateView(View):
             })
 
 
+@method_decorator(login_required, name='dispatch')
 class EmployeeDetailView(View):
-    template_name = 'store/employee-detail.html'
-    success_url = reverse_lazy('employee_list')
+    template_name = 'store/employee/employee-detail.html'
+    success_url = reverse_lazy('employee-list')
 
     def get(self, request, pk):
         query = '''
@@ -222,8 +231,9 @@ class EmployeeDetailView(View):
             })
 
 
+@method_decorator(login_required, name='dispatch')
 class ClientListView(View):
-    template_name = 'store/client-list.html'
+    template_name = 'store/client/client-list.html'
 
     def get(self, request):
         form = ClientFilterForm(request.GET)
@@ -242,7 +252,7 @@ class ClientListView(View):
 
             if discount:
                 query += 'WHERE percent = %s '
-                print("This role ", discount)
+                print("This discount ", discount)
                 query_params.append(discount)
 
             if cust_name:
@@ -269,9 +279,10 @@ class ClientListView(View):
         })
 
 
+@method_decorator(login_required, name='dispatch')
 class ClientCreateView(View):
-    template_name = 'store/client-add.html'
-    success_url = reverse_lazy('client_list')  # Assuming 'product_list' is the name of your product list URL
+    template_name = 'store/client/client-add.html'
+    success_url = reverse_lazy('client-list')  # Assuming 'product_list' is the name of your product list URL
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -304,7 +315,7 @@ class ClientCreateView(View):
                        INSERT INTO store_customer_card VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
                    """
             with connection.cursor() as cursor:
-                cursor.execute(insert,params)
+                cursor.execute(insert, params)
 
             messages.success(request, 'Product added successfully')
             return redirect(self.success_url)
@@ -314,24 +325,221 @@ class ClientCreateView(View):
             })
 
 
+@method_decorator(login_required, name='dispatch')
 class ClientUpdateView(View):
-    pass
+    template_name = 'store/client/client-detail.html'
+    success_url = reverse_lazy('client-list')
+
+    def get(self, request, pk):
+        query = '''
+               SELECT * FROM store_customer_card WHERE card_number = %s
+               '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            client = cursor.fetchall()
+
+        (card_number, cust_name
+         , cust_surname, cust_patronymic, customer_phone_number
+         , customer_city, customer_street
+         , customer_zip_code, customer_discount_percent) = (client[0][0], client[0][1]
+                                                            , client[0][2], client[0][3], client[0][4]
+                                                            , client[0][5], client[0][6]
+                                                            , client[0][7], client[0][8])
+
+        form = ClientDetailForm(initial={
+            'card_number': card_number,
+            'cust_name': cust_name,
+            'cust_surname': cust_surname,
+            'cust_patronymic': cust_patronymic,
+            'customer_phone_number': customer_phone_number,
+            'customer_city': customer_city,
+            'customer_street': customer_street,
+            'customer_zip_code': customer_zip_code,
+            'customer_discount_percent': customer_discount_percent
+        })
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'pk': pk,
+        })
+
+    def post(self, request, pk):
+        if request.POST.get('action') == 'delete':
+            return self.delete_client(request, pk)
+        else:
+            return self.update_client(request, pk)
+
+    def delete_client(self, request, pk):
+        delete = ('DELETE FROM store_customer_card WHERE card_number = %s')
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete, [pk])
+
+        messages.success(request, 'Client deleted successfully')
+        return redirect(self.success_url)
+
+    def update_client(self, request, pk):
+        form = ClientDetailForm(request.POST)
+        print(form.errors)
+        if form.is_valid():
+            params = []
+            selected_id = form.cleaned_data.get("card_number")
+            params.append(selected_id)
+            selected_surname = form.cleaned_data.get('cust_surname')
+            params.append(selected_surname)
+            selected_name = form.cleaned_data.get('cust_name')
+            params.append(selected_name)
+            selected_patronymic = form.cleaned_data.get('cust_patronymic')
+            params.append(selected_patronymic)
+            selected_phone_number = form.cleaned_data.get('customer_phone_number')
+            params.append(selected_phone_number)
+            selected_city = form.cleaned_data.get('customer_city')
+            params.append(selected_city)
+            selected_street = form.cleaned_data.get('customer_street')
+            params.append(selected_street)
+            selected_zipcode = form.cleaned_data.get('customer_zip_code')
+            params.append(selected_zipcode)
+            selected_percent = form.cleaned_data.get('customer_discount_percent')
+            params.append(selected_percent)
+            params.append(pk)
+
+            update = '''
+                   UPDATE store_customer_card
+                   SET card_number = %s, cust_surname = %s, cust_name = %s,
+                       cust_patronymic = %s, phone_number = %s, city = %s,
+                       street = %s, zip_code = %s, percent = %s
+                   WHERE card_number = %s
+                   '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(update, params)
+
+            messages.success(request, 'Client updated successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk
+            })
 
 
+@method_decorator(login_required, name='dispatch')
 class CategoryListView(View):
-    pass
+    template_name = 'store/category/category-list.html'
+
+    def get(self, request):
+        query = '''
+                SELECT category_number, category_name
+                FROM store_category AS p
+                '''
+
+        with connection.cursor() as cursor:
+            query += 'ORDER BY 2'
+            cursor.execute(query)
+            categories = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'categories': categories
+        })
 
 
+@method_decorator(login_required, name='dispatch')
 class CategoryCreateView(View):
-    pass
+    template_name = 'store/category/category-add.html'
+    success_url = reverse_lazy('category-list')
+
+    def get(self, request):
+        return render(request, template_name=self.template_name, context={
+            'form': CategoryDetailForm()
+        })
+
+    def post(self, request):
+        form = CategoryDetailForm(request.POST)
+        if form.is_valid():
+            selected_name = form.cleaned_data.get('category_name')
+
+            insert = """
+                   INSERT INTO store_category (category_name) VALUES (%s);
+               """
+
+            with connection.cursor() as cursor:
+                cursor.execute(insert, [selected_name])
+
+            messages.success(request, 'Category added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form
+            })
 
 
+@method_decorator(login_required, name='dispatch')
 class CategoryUpdateView(View):
-    pass
+    template_name = 'store/category/category-detail.html'
+    success_url = reverse_lazy('category-list')
+
+    def get(self, request, pk):
+        query = '''
+                SELECT * FROM store_category WHERE category_number = %s
+                '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            category = cursor.fetchall()
+
+        category_name = category[0][1]
+
+        form = CategoryDetailForm(initial={
+            'category_name': category_name
+        })
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'pk': pk,
+        })
+
+    def post(self, request, pk):
+        if request.POST.get('action') == 'delete':
+            return self.delete_category(request, pk)
+        else:
+            return self.update_category(request, pk)
+
+    def delete_category(self, request, pk):
+        delete = 'DELETE FROM store_category WHERE category_number = %s'
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete, [pk])
+
+        messages.success(request, 'Category deleted successfully')
+        return redirect(self.success_url)
+
+    def update_category(self, request, pk):
+        form = CategoryDetailForm(request.POST)
+
+        if form.is_valid():
+            selected_category = form.cleaned_data.get('category_name')
+
+            update = '''
+                    UPDATE store_category 
+                    SET category_name = %s
+                    WHERE category_number = %s
+                    '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(update,
+                               [selected_category, pk])
+
+            messages.success(request, 'Category updated successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk
+            })
 
 
+@method_decorator(login_required, name='dispatch')
 class ProductListView(View):
-    template_name = 'store/product-list.html'
+    template_name = 'store/product/product-list.html'
 
     def get(self, request):
         form = ProductFilterForm(request.GET)
@@ -376,9 +584,10 @@ class ProductListView(View):
         })
 
 
+@method_decorator(login_required, name='dispatch')
 class ProductCreateView(View):
-    template_name = 'store/product-add.html'
-    success_url = reverse_lazy('product_list')
+    template_name = 'store/product/product-add.html'
+    success_url = reverse_lazy('product-list')
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -408,9 +617,10 @@ class ProductCreateView(View):
             })
 
 
+@method_decorator(login_required, name='dispatch')
 class ProductDetailView(View):
-    template_name = 'store/product-detail.html'
-    success_url = reverse_lazy('product_list')
+    template_name = 'store/product/product-detail.html'
+    success_url = reverse_lazy('product-list')
 
     def get(self, request, pk):
         query = '''
@@ -475,21 +685,490 @@ class ProductDetailView(View):
             })
 
 
+@method_decorator(login_required, name='dispatch')
 class StoreProductListView(View):
-    pass
+    template_name = 'store/store-product/store-product-list.html'
+
+    def get(self, request):
+        form = StoreProductFilterForm(request.GET)
+
+        query = """
+                    SELECT ssp."UPC", sp.product_name, sp.characteristics,
+                           ssp.selling_price, ssp.products_number, 
+                           ssp.promotional_product
+                    FROM store_store_product AS ssp
+                    INNER JOIN store_product AS sp
+                    ON ssp.id_product_id = sp.id_product
+                    """
+
+        if form.is_valid():
+            selected_upc = form.cleaned_data.get('product_upc')
+            show_sales = form.cleaned_data.get('discount_available')
+            show_full_price = form.cleaned_data.get('discount_unavailable')
+            sort_by_name = form.cleaned_data.get('sort_by_name')
+            sort_by_quantity = form.cleaned_data.get('sort_by_quantity')
+
+            query_params = []
+            # if selected_upc:
+            #     query += 'WHERE ssp."UPC" ILIKE %s '
+            #     query_params.append(selected_upc)
+            # else:
+            #     if show_sales:
+            #         query += 'WHERE ssp.promotional_product = true'
+            #         query_params.append(show_sales)
+            #         # query_params.append(show_sales.discount_available)
+            #     if show_full_price:
+            #         if show_sales:
+            #             query += ' AND ssp.promotional_product = false'
+            #         else:
+            #             query += ' WHERE ssp.promotional_product = false'
+            #
+            # with connection.cursor() as cursor:
+            #     # if sort_by_quantity:
+            #     #     query += 'ORDER BY ssp.products_number DESC'
+            #     # if sort_by_name:
+            #     #     if sort_by_quantity:
+            #     #         query += ', sp.product_name'
+            #     #     else:
+            #     #         query += 'ORDER BY sp.product_name'
+            #     if sort_by_name:
+            #         query += ' ORDER BY sp.product_name'
+            #     if sort_by_quantity:
+            #         if sort_by_name:
+            #             query += ', ssp.products_number DESC'
+            #         else:
+            #             query += ' ORDER BY ssp.products_number DESC'
+            #     cursor.execute(query, query_params)
+            #     store_products = cursor.fetchall()
+            if selected_upc:
+                query += 'WHERE ssp."UPC" ILIKE %s '
+                query_params.append(selected_upc)
+            if show_sales:
+                if selected_upc:
+                    query += 'AND ssp.promotional_product = true'
+                else:
+                    query += 'WHERE ssp.promotional_product=true'
+                    query_params.append(show_sales)
+            if show_full_price:
+                if show_sales or selected_upc:
+                    query += ' OR ssp.promotional_product = false'
+                else:
+                    query += ' WHERE ssp.promotional_product = false'
+
+            with connection.cursor() as cursor:
+                if sort_by_name:
+                    query += ' ORDER BY sp.product_name'
+                if sort_by_quantity:
+                    if sort_by_name:
+                        query += ', ssp.products_number DESC'
+                    else:
+                        query += ' ORDER BY ssp.products_number DESC'
+                cursor.execute(query, query_params)
+                store_products = cursor.fetchall()
+        else:
+            with connection.cursor() as cursor:
+                query += ' ORDER BY sp.product_name'
+                cursor.execute(query)
+                store_products = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'store_products': store_products
+        })
 
 
+@method_decorator(login_required, name='dispatch')
 class StoreProductCreateView(View):
-    pass
+    template_name = 'store/store-product/store-product-add.html'
+    success_url = reverse_lazy('store-product-list')
+
+    def get(self, request):
+        return render(request, template_name=self.template_name, context={
+            'form': StoreProductDetailForm()
+        })
+
+    def post(self, request):
+        form = StoreProductDetailForm(request.POST)
+        if form.is_valid():
+            product_upc = form.cleaned_data.get('product_upc')
+            id_product = form.cleaned_data.get('id_product_id')
+            selling_price = form.cleaned_data.get('selling_price')
+            product_number = form.cleaned_data.get('products_number')
+            promotional_product = False
+            upc_prom = None
+
+            query_params = (product_upc, selling_price, product_number, promotional_product,
+                            upc_prom, id_product.id_product)
+
+            check_exist_query = '''
+                        SELECT * FROM store_store_product WHERE id_product_id = %s
+            '''
+            with connection.cursor() as cursor:
+                cursor.execute(check_exist_query, [id_product.id_product])
+                store_product = cursor.fetchall()
+
+            if store_product:
+                new_product_num = store_product[0][2] + product_number
+                new_selling_price = selling_price
+                renewal_store_product = '''
+                            UPDATE store_store_product
+                            SET selling_price = %s, products_number = %s
+                            WHERE "UPC" = %s  
+                '''
+                with connection.cursor() as cursor:
+                    cursor.execute(renewal_store_product,
+                                   [new_selling_price, new_product_num, store_product[0][0]])
+            else:
+                insert = """
+                        INSERT INTO store_store_product ("UPC", selling_price, products_number, promotional_product, 
+                                                        "UPC_prom_id", id_product_id) VALUES (%s, %s, %s, %s, %s, %s);
+                              """
+
+                with connection.cursor() as cursor:
+                    cursor.execute(insert, query_params)
+
+            messages.success(request, 'Store Product added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form
+            })
 
 
+@method_decorator(login_required, name='dispatch')
 class StoreProductUpdateView(View):
-    pass
+    template_name = 'store/store-product/store-product-detail.html'
+    success_url = reverse_lazy('store-product-list')
+
+    def get(self, request, pk):
+        query = '''
+                 SELECT * FROM store_store_product WHERE "UPC" = %s 
+                 '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            store_product = cursor.fetchall()
+
+        upc_prod, selling_price, prod_number, promotional_product, upc_prom_id, id_prod = (store_product[0][0],
+                                                                                           store_product[0][1],
+                                                                                           store_product[0][2],
+                                                                                           store_product[0][3],
+                                                                                           store_product[0][4],
+                                                                                           store_product[0][5])
+
+        query_connected_product = '''
+                    SELECT * FROM store_product WHERE id_product = %s
+        '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(query_connected_product, [id_prod])
+            connected_product = cursor.fetchall()
+
+        prod_name, prod_characteristics = connected_product[0][1], connected_product[0][2]
+        form = StoreProductDetailForm(initial={
+            'product_upc': upc_prod,
+            'selling_price': selling_price,
+            'products_number': prod_number,
+            'id_product_id': id_prod
+        })
+        form1 = StorePromotionalProductUpdateForm(initial={
+            'products_number': prod_number
+        })
+        return render(request, template_name=self.template_name, context={
+            'form': form1 if promotional_product else form,
+            'pk': pk,
+            'upc_promotional': upc_prom_id,
+            'selling_price': selling_price,
+            'promotional_product': promotional_product,
+            'upc_prod': upc_prod,
+            'prod_name': prod_name,
+            'prod_characteristics': prod_characteristics
+        })
+
+    def post(self, request, pk):
+        if request.POST.get('action') == 'delete':
+            return self.delete_store_product(request, pk)
+        else:
+            return self.update_store_product(request, pk)
+
+    def delete_store_product(self, request, pk):
+        delete = 'DELETE FROM store_store_product WHERE "UPC" = %s '
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete, [pk])
+
+        messages.success(request, 'Store product deleted successfully')
+        return redirect(self.success_url)
+
+    def update_store_product(self, request, pk):
+        form = StoreProductDetailForm(request.POST)
+
+        if form.is_valid():
+            selected_selling_price = form.cleaned_data.get('selling_price')
+            selected_prod_number = form.cleaned_data.get('products_number')
+            print('VALIDDDD')
+
+            update = '''UPDATE store_store_product
+                        SET selling_price = %s, products_number = %s
+                        WHERE "UPC" = %s
+                        '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(update,
+                               [selected_selling_price, selected_prod_number, pk])
+
+            messages.success(request, 'Store Product added successfully')
+            return redirect(self.success_url)
+        else:
+            selected_product = '''
+                        SELECT * FROM store_store_product WHERE "UPC" = %s 
+                 '''
+
+            print('ya invalid')
+            with connection.cursor() as cursor:
+                cursor.execute(selected_product, [pk])
+                selected_prod = cursor.fetchall()
+
+            product = '''
+                        SELECT * FROM store_product WHERE "id_product" = %s 
+                 '''
+
+            with connection.cursor() as cursor:
+                cursor.execute(product, [selected_prod[0][5]])
+                prod = cursor.fetchall()
+
+            prod_name, prod_characteristics = prod[0][1], prod[0][2]
+
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk,
+                'upc_prod': pk,
+                'prod_name': prod_name,
+                'prod_characteristics': prod_characteristics
+            })
 
 
+@method_decorator(login_required, name='dispatch')
+class StorePromotionalProductCreateView(View):
+    template_name = 'store/store-product/store-product-add-promotional.html'
+    success_url = reverse_lazy('store-product-list')
+
+    def get(self, request, pk):
+        main_product_query = '''
+                         SELECT * FROM store_store_product WHERE "UPC" = %s
+                         '''
+        query_connected_product = '''
+                           SELECT * FROM store_product WHERE id_product = %s
+               '''
+
+        with connection.cursor() as cursor:
+            cursor.execute(main_product_query, [pk])
+            main_product = cursor.fetchall()
+            cursor.execute(query_connected_product, [main_product[0][5]])
+            product = cursor.fetchall()
+
+        print(product[0])
+        print(main_product[0])
+
+        return render(request, template_name=self.template_name, context={
+            'form': StorePromotionalProductDetailForm(),
+            'pk': pk,
+            'product': product[0],
+            'store_product': main_product[0]
+        })
+
+    def post(self, request, pk):
+        form = StorePromotionalProductDetailForm(request.POST)
+        selected_product_query = '''
+                                SELECT * FROM store_store_product WHERE "UPC" = %s
+                         '''
+        query_connected_product = '''
+                                   SELECT * FROM store_product WHERE id_product = %s
+                       '''
+        with connection.cursor() as cursor:
+            cursor.execute(selected_product_query, [pk])
+            main_product = cursor.fetchall()
+            cursor.execute(query_connected_product, [main_product[0][5]])
+            product = cursor.fetchall()
+
+        if form.is_valid():
+            product_upc = form.cleaned_data.get('product_upc')
+            id_product = main_product[0][5]
+            selling_price = main_product[0][1] * decimal.Decimal('0.8')
+            product_number = form.cleaned_data.get('products_number')
+            promotional_product = True
+            upc_prom = None
+
+            query_params = (product_upc, selling_price, product_number, promotional_product,
+                            upc_prom, id_product)
+
+            insert = """
+                        INSERT INTO store_store_product ("UPC", selling_price, products_number, promotional_product,
+                                                        "UPC_prom_id", id_product_id) VALUES (%s, %s, %s, %s, %s, %s);
+                        """
+            renewal_store_product = '''
+                                       UPDATE store_store_product
+                                       SET "UPC_prom_id" = %s
+                                       WHERE "UPC" = %s
+                           '''
+            with connection.cursor() as cursor:
+                cursor.execute(insert, query_params)
+                cursor.execute(renewal_store_product, [product_upc, pk])
+
+            messages.success(request, 'Promotional Store Product added successfully')
+            return redirect(self.success_url)
+        else:
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk,
+                'product': product[0],
+                'store_product': main_product[0]
+            })
+
+
+@method_decorator(login_required, name='dispatch')
 class CheckListView(View):
-    pass
+    template_name = 'store/check/check-list.html'
+
+    def get(self, request):
+        print(request.user.groups.all()[0])
+        query = """
+        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
+            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
+        FROM store_check AS sc 
+        INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            checks = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'checks': checks
+        })
 
 
 class CheckDetailsView(View):
-    pass
+    template_name = 'store/check/check-detail.html'
+
+    def get(self, request, pk):
+        query = """
+        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
+            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
+        FROM store_check AS sc 
+        INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        WHERE sc.check_number = %s
+        """
+
+        all_products_query = """
+        SELECT
+            ss."UPC_id",
+            upc_pn.product_name,
+            ss.product_number,
+            ss.selling_price,
+            COALESCE(cp.percent, 0) AS percent,
+            ROUND((ss.product_number * ss.selling_price) * (100 - percent) / 100, 2) AS discounted_price
+        FROM store_sale AS ss
+        INNER JOIN (SELECT ssp."UPC", sp.product_name
+                    FROM store_store_product AS ssp
+                    INNER JOIN store_product AS sp
+                    ON ssp.id_product_id = sp.id_product
+        ) AS upc_pn
+        ON ss."UPC_id" = upc_pn."UPC"
+        LEFT JOIN (SELECT sc.check_number, scc.percent
+                    FROM store_check AS sc
+                    INNER JOIN store_customer_card AS scc
+                    ON sc.card_number_id = scc.card_number
+        ) AS cp
+        ON ss.check_number_id = cp.check_number
+        WHERE ss.check_number_id = %s;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(all_products_query, [pk])
+            all_products_in_check = cursor.fetchall()
+            cursor.execute(query, [pk])
+            check_header = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'all_products_in_check': all_products_in_check,
+            'check_header': check_header
+        })
+
+
+class UserLoginView(View):
+    template_name = 'registration/login.html'
+    success_url = reverse_lazy('/products')
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('/products')
+        form = UserLoginForm(request.POST or None)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        next = request.GET.get('next')
+        form = UserLoginForm(request.POST or None)
+        if (form.is_valid()):
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            login(request, user)
+            if next:
+                return redirect(next)
+            return redirect('/products')
+
+
+class UserRegisterView(View):
+    template_name = 'registration/register.html'
+    success_url = reverse_lazy('products')
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('/products')
+        form = UserRegisterForm(request.POST or None)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        next = request.GET.get('next')
+        form = UserRegisterForm(request.POST or None)
+        if form.is_valid():
+            selected_username = form.cleaned_data.get('username')
+            selected_password = make_password(form.cleaned_data.get('password'))
+            selected_empl = form.cleaned_data.get('empl')
+            with connection.cursor() as cursor:
+                cursor.execute("""SELECT empl_name, empl_surname FROM store_employee WHERE id_employee = %s""",
+                               [selected_empl])
+                employee = cursor.fetchall()[0]
+                cursor.execute("""INSERT INTO auth_user(password, is_superuser, username, first_name, last_name, email,
+                                                        is_staff, is_active, date_joined, id_employee) 
+                                                        VALUES (%s, %s, %s, %s, %s, %s, %s,%s, CURRENT_TIMESTAMP, %s)
+                               """,
+                               [selected_password, False, selected_username, employee[0], employee[1], '', selected_empl==2, True
+                                   , selected_empl])
+
+            new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))
+            login(request, new_user)
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE auth_user SET id_employee = %s WHERE username = %s",
+                               [form.cleaned_data.get('empl'), form.cleaned_data.get('username')])
+                if 'CASH' in form.cleaned_data.get('empl'):
+                    group_id = 1
+                else:
+                    group_id = 2
+                cursor.execute("INSERT INTO auth_user_groups(user_id, group_id) VALUES (%s, %s)",
+                               [new_user.id, group_id])
+            if next:
+                return redirect(next)
+            return redirect('/')
+
+        context = {
+            'form': form,
+        }
+        return render(request, "registration/register.html", context)
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('/accounts/login')

@@ -1,8 +1,11 @@
 import re
 
 from django import forms
+from django.contrib.auth import authenticate, get_user_model
+from django.core.exceptions import ValidationError
+from django.db import connection
 
-from .models import Category, Employee
+from .models import Category, Employee, Product, Store_Product
 
 
 class ProductFilterForm(forms.Form):
@@ -15,6 +18,34 @@ class ProductDetailForm(forms.Form):
     product_name = forms.CharField(label='Product Name', max_length=100)
     characteristics = forms.CharField(label='Characteristics', widget=forms.Textarea)
     category = forms.ModelChoiceField(queryset=Category.objects.all(), label='Category', empty_label='All Categories')
+
+
+class StoreProductFilterForm(forms.Form):
+    product_upc = forms.CharField(label='Product UPC', max_length=12,
+                                  widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}),
+                                  required=False)
+    discount_available = forms.BooleanField(label='Only discount products', required=False)
+    discount_unavailable = forms.BooleanField(label='Only full price products', required=False)
+    sort_by_name = forms.BooleanField(label='Sort by name', required=False)
+    sort_by_quantity = forms.BooleanField(label='Sort by quantity', required=False)
+
+
+class StoreProductDetailForm(forms.Form):
+    product_upc = forms.CharField(label='Product UPC', max_length=12,
+                                  widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}))
+    selling_price = forms.DecimalField(label='Selling price', max_digits=13, decimal_places=4)
+    products_number = forms.DecimalField(label='Product number')
+    id_product_id = forms.ModelChoiceField(queryset=Product.objects.all(), label='id product')
+
+
+class StorePromotionalProductDetailForm(forms.Form):
+    product_upc = forms.CharField(label='Product UPC', max_length=12,
+                                  widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}))
+    products_number = forms.DecimalField(label='Product number')
+
+
+class StorePromotionalProductUpdateForm(forms.Form):
+    products_number = forms.DecimalField(label='Product number')
 
 
 class EmployeeFilterForm(forms.Form):
@@ -58,7 +89,7 @@ class ClientFilterForm(forms.Form):
 
 
 class ClientDetailForm(forms.Form):
-    card_number = forms.CharField(max_length=10, help_text="Enter employee id")
+    card_number = forms.CharField(max_length=13, help_text="Enter employee id")
     cust_surname = forms.CharField(max_length=50, help_text="Enter employee surname")
     cust_name = forms.CharField(max_length=50, help_text="Enter employee name")
     cust_patronymic = forms.CharField(max_length=50, required=False, help_text="Enter patronymic")
@@ -75,3 +106,60 @@ class ClientDetailForm(forms.Form):
     customer_street = forms.CharField(max_length=50, help_text="Enter employee street", required=False)
     customer_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code", required=False)
     customer_discount_percent = forms.IntegerField(help_text="Enter percent of discount", required=False)
+
+
+class CategoryDetailForm(forms.Form):
+    category_name = forms.CharField(label='Category Name', max_length=50)
+
+
+class UserLoginForm(forms.Form):
+    username = forms.CharField(max_length=20, help_text="Enter username")
+    password = forms.CharField(max_length=50, help_text="Enter password")
+
+    def clean(self, *args, **kwargs):
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+
+        if username and password:
+            user = authenticate(username=username, password=password)
+
+            if not user:
+                raise ValidationError("Incorrect username or password")
+
+            if not user.check_password(password):
+                raise ValidationError("Incorrect password")
+
+        return super(UserLoginForm, self).clean()
+
+
+user = get_user_model()
+
+
+class UserRegisterForm(forms.Form):
+    empl = forms.ChoiceField(choices=None)
+    username = forms.CharField(max_length=20, help_text="Enter username")
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    class Meta:
+        model = user
+        fields = [
+            'username',
+            'password',
+            'empl'
+        ]
+
+    def clean(self, *args, **kwargs):
+        return super(UserRegisterForm, self).clean()
+
+    def __init__(self, *args, **kwargs):
+        super(UserRegisterForm, self).__init__(*args, **kwargs)
+        self.update_choices()
+
+    def update_choices(self):
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT * FROM store_employee s LEFT JOIN auth_user a ON a.id_employee = s.id_employee WHERE a.id_employee is NULL
+            """)
+            querys = cursor.fetchall()
+        choices = [(row[0], row[1] + " " + row[2]) for row in querys]
+        self.fields['empl'].choices = choices

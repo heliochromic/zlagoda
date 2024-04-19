@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block content %}
-    <form method="POST" action="{% url 'product_add' %}">
+    <form method="POST" action="{% url 'product-add' %}">
         {% csrf_token %}
         <label for="category">Category:</label>
         {{ form.category }}

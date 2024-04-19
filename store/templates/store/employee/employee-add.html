@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block content %}
-<form method="POST" action="{% url 'employee_add' %}">
+<form method="POST" action="{% url 'employee-add' %}">
     {% csrf_token %}
     <label for="id_employee">Employee ID:</label>
     {{ form.id_employee }}

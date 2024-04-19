@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Promotional Store Product
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <p>
+        <p>Product Name: {{ product.1 }}</p>
+        <p>Characteristics: {{ product.2 }}</p>
+        <p>Selling price: {{ store_product.1 }}</p>
+    </p>
+    <form method="POST" action="{% url 'store-product-add-promotional' pk=pk %}">
+        {% csrf_token %}
+        <label for="product_upc">Product UPC:</label>
+        {{ form.product_upc }}
+    
+        <label for="products_number">Products Number:</label>
+        {{ form.products_number }}
+        
+        <button type="submit" class="button">Add</button>
+    </form>
+{% endblock %}

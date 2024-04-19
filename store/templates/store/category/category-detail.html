@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Product
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <form method="POST" action="{% url 'category-detail' pk=pk %}">
+        {% csrf_token %}
+
+        <label for="category_name">Category Name:</label>
+        {{ form.category_name }}
+
+        <button type="submit" class="button edit-btn">Edit</button>
+    </form>
+    <form method="POST" action="{% url 'category-detail' pk=pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="button delete-btn">Delete</button>
+    </form>
+{% endblock %}

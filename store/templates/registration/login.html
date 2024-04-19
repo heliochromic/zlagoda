@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <form method="POST" action="{% url 'user-login' %}">
+        {% csrf_token %}
+    
+        <label for="username">username:</label>
+        {{ form.username }}
+
+      <label for="password">password:</label>
+        {{ form.password }}
+        <button type="submit" class="button">Log in</button>
+    </form>
+<p><a href="{% url 'user-register' %}">Create new account</a></p>
+{% endblock %}

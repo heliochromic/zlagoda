@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-    Add Employee
+    Add Product
 {% endblock %}
 
 {% block css_files %}
@@ -10,10 +10,10 @@
 {% endblock %}
 
 {% block content %}
-<form method="POST" action="{% url 'client_add' %}">
-    {% csrf_token %}
-    <label for="card_number">Customer ID:</label>
-    {{ form.card_number }}
+    <form method="POST" action="{% url 'client-detail' pk=pk %}">
+        {% csrf_token %}
+         <label for="card_number">Customer ID:</label>
+        {{ form.card_number }}
 
     <label for="cust_name">Customer Name:</label>
     {{ form.cust_name }}
@@ -39,6 +39,11 @@
     <label for="customer_discount_percent">Discount Percent:</label>
     {{ form.customer_discount_percent }}
 
-    <button type="submit" class="add-button">Add</button>
-</form>
+        <button type="submit" class="button edit-btn">Edit</button>
+    </form>
+    <form method="POST" action="{% url 'client-detail' pk=pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="button delete-btn">Delete</button>
+    </form>
 {% endblock %}

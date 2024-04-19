@@ -11,7 +11,7 @@
 
 {% block content %}
     <section id="all-employees">
-        <form method="GET" action="{% url 'employee_list' %}">
+        <form method="GET" action="{% url 'employee-list' %}">
             <label for="employee_name">Employee Name:</label>
             {{ form.employee_name }}
 
@@ -20,7 +20,7 @@
 
             <button type="submit" class="filter-button">Filter</button>
         </form>
-        <a href="{% url 'employee_add' %}">
+        <a href="{% url 'employee-add' %}">
             <div class="add-button">
                 Add Employee
             </div>

@@ -1,8 +1,6 @@
-<<<<<<< HEAD
+
 import decimal
-=======
 from datetime import date, datetime
->>>>>>> views_development
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -13,16 +11,16 @@ from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
 from django.contrib import messages
 from django.urls import reverse_lazy
-<<<<<<< HEAD
+
 from .forms import (ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
                     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm,
                     StoreProductFilterForm, \
                     StoreProductDetailForm, StorePromotionalProductDetailForm, StorePromotionalProductUpdateForm)
-=======
+
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm, CheckProductDetailForm, \
     CheckDetailForm, CheckFilter, StatsDateOptions
->>>>>>> views_development
+
 
 
 # Create your views here

@@ -4,11 +4,8 @@ from django.contrib.auth import authenticate, get_user_model
 from django.core.exceptions import ValidationError
 from django.db import connection
 
-<<<<<<< HEAD
 from .models import Category, Employee, Product, Store_Product
-=======
 from .models import Category, Employee, Product, Customer_Card
->>>>>>> views_development
 
 
 class ProductFilterForm(forms.Form):

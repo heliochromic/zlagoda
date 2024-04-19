@@ -6,10 +6,16 @@
 {% endblock %}
 
 {% block css_files %}
-
+<style>
+        @media print {
+            #all-categories a {
+                display: none !important;
+            }
+        }
+    </style>
 {% endblock %}
-
 {% block content %}
+
     <section id="all-categories">
         <a href="{% url 'category-add' %}">
             <div class="button">

@@ -1,0 +1,19 @@
+.lists-container form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lists-container form > div {
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.lists-container form .button,
+.lists-container form input[type='date'] {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    margin: 10px auto;
+
+}

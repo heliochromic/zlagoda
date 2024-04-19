@@ -10,15 +10,23 @@
 {% endblock %}
 
 {% block content %}
+
     <form method="POST" action="{% url 'user-login' %}">
         {% csrf_token %}
-    
+
         <label for="username">username:</label>
         {{ form.username }}
 
-      <label for="password">password:</label>
+        <label for="password">password:</label>
         {{ form.password }}
+        {% if msg %}
+            <p>{{ msg }}}</p>
+        {% endif %}
         <button type="submit" class="button">Log in</button>
     </form>
-<p><a href="{% url 'user-register' %}">Create new account</a></p>
+    <a href="{% url 'user-register' %}">
+        <div id="new-account" class="button filter-btn">
+            Create new account
+        </div>
+    </a>
 {% endblock %}

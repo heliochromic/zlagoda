@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Product To Check
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <section id="check-product-detail">
+        {{ product }}
+        <form method="POST" action="{% url 'check-product-detail' upc=product.0.0 %}">
+            {% csrf_token %}
+            <input type="hidden" name="product_upc" value="{{ product.0.0 }}"/>
+
+            <label for="quantity">Quantity</label>
+            {{ form.quantity }}
+            {% if form.errors %}
+                <p>{{ form.errors }}</p>
+            {% endif %}
+            <button type="submit" class="button">Add</button>
+        </form>
+    </section>
+
+{% endblock %}

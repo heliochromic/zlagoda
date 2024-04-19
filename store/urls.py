@@ -35,9 +35,14 @@ urlpatterns = [
 
     # For check URLs
     path('check/', views.CheckListView.as_view(), name='check-list'),
+    path('check/add/', views.CheckCreateView.as_view(), name='check-add'),
     path('check/<str:pk>', views.CheckDetailsView.as_view(), name='check-details'),
+    path('check/add/<str:upc>', views.CheckProductDetailView.as_view(), name='check-product-detail'),
 
     path('accounts/login/', views.UserLoginView.as_view(), name='user-login'),
     path('accounts/register/', views.UserRegisterView.as_view(), name='user-register'),
-    path('accounts/logout/', views.logout_view, name='logout')
+    path('accounts/logout/', views.logout_view, name='logout'),
+    path('accounts/profile/', views.user_profile, name='user-profile'),
+
+    path('statistics/', views.StatisticsTab.as_view(), name='statistics')
 ]

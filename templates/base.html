@@ -1,4 +1,4 @@
-{% load static %}
+ {% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,6 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static "app.css" %}">
+    <style>
+        @media print {
+            header nav {
+                display: none !important;
+            }
+        }
+    </style>
     {% block css_files %}{% endblock %}
 </head>
 <body>
@@ -14,7 +21,9 @@
     <h1><a href="{% url 'product-list' %}">Zлагода</a></h1>
     <nav>
         <ul>
+            {% if user.is_authenticated %}
             {% if user.groups.first.name == "manager" %}
+            <li><a href="{% url 'statistics' %}">Stats</a></li>
             <li><a href="{% url 'employee-list' %}">Employee</a></li>
             {% endif %}
             <li><a href="{% url 'client-list' %}">Client</a></li>
@@ -24,10 +33,11 @@
             <li><a href="{% url 'product-list' %}">Products</a></li>
             <li><a href="{% url 'store-product-list' %}">Store Products</a></li>
             <li><a href="{% url 'check-list' %}">Checks</a></li>
+            {% endif %}
             {% if not user.is_authenticated %}
             <li><a href="{% url 'user-login' %}">Log In</a></li>
             {% else %}
-            <li><a href="{% url 'logout' %}">Log Out</a></li>
+            <li><a href="{% url 'user-profile' %}">Profile</a></li>
             {% endif %}
         </ul>
     </nav>

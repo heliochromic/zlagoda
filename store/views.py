@@ -1,18 +1,28 @@
+<<<<<<< HEAD
 import decimal
+=======
+from datetime import date, datetime
+>>>>>>> views_development
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.db import connection
+from django.db import connection, transaction, IntegrityError
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, reverse, redirect, HttpResponseRedirect
 from django.views import View
 from django.contrib import messages
 from django.urls import reverse_lazy
+<<<<<<< HEAD
 from .forms import (ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
                     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm,
                     StoreProductFilterForm, \
                     StoreProductDetailForm, StorePromotionalProductDetailForm, StorePromotionalProductUpdateForm)
+=======
+from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
+    ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm, CheckProductDetailForm, \
+    CheckDetailForm, CheckFilter, StatsDateOptions
+>>>>>>> views_development
 
 
 # Create your views here
@@ -71,7 +81,7 @@ class EmployeeListView(View):
 @method_decorator(login_required, name='dispatch')
 class EmployeeCreateView(View):
     template_name = 'store/employee/employee-add.html'
-    success_url = reverse_lazy('employee-list')  # Assuming 'product_list' is the name of your product list URL
+    success_url = reverse_lazy('employee-list')
 
     def get(self, request):
         return render(request, template_name=self.template_name, context={
@@ -180,11 +190,11 @@ class EmployeeDetailView(View):
         return redirect(self.success_url)
 
     def update_employee(self, request, pk):
-        form = EmployeeDetailForm(request.POST)
+        form = EmployeeDetailForm(request.POST, initial={'pk': pk})
         print(form.errors)
         if form.is_valid():
             params = []
-            selected_id = form.cleaned_data.get("id_employee")
+            selected_id = pk
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('employee_surname')
             params.append(selected_surname)
@@ -370,7 +380,7 @@ class ClientUpdateView(View):
             return self.update_client(request, pk)
 
     def delete_client(self, request, pk):
-        delete = ('DELETE FROM store_customer_card WHERE card_number = %s')
+        delete = 'DELETE FROM store_customer_card WHERE card_number = %s'
 
         with connection.cursor() as cursor:
             cursor.execute(delete, [pk])
@@ -383,7 +393,7 @@ class ClientUpdateView(View):
         print(form.errors)
         if form.is_valid():
             params = []
-            selected_id = form.cleaned_data.get("card_number")
+            selected_id = pk
             params.append(selected_id)
             selected_surname = form.cleaned_data.get('cust_surname')
             params.append(selected_surname)
@@ -454,10 +464,9 @@ class CategoryCreateView(View):
         })
 
     def post(self, request):
-        form = CategoryDetailForm(request.POST)
+        form = CategoryDetailForm(request.POST, initial={'pk': 0})
         if form.is_valid():
-            selected_name = form.cleaned_data.get('category_name')
-
+            selected_name = form.cleaned_data
             insert = """
                    INSERT INTO store_category (category_name) VALUES (%s);
                """
@@ -504,20 +513,22 @@ class CategoryUpdateView(View):
             return self.update_category(request, pk)
 
     def delete_category(self, request, pk):
-        delete = 'DELETE FROM store_category WHERE category_number = %s'
+        try:
+            delete = 'DELETE FROM store_category WHERE category_number = %s'
 
-        with connection.cursor() as cursor:
-            cursor.execute(delete, [pk])
+            with connection.cursor() as cursor:
+                cursor.execute(delete, [pk])
 
-        messages.success(request, 'Category deleted successfully')
-        return redirect(self.success_url)
+            messages.success(request, 'Category deleted successfully')
+            return redirect(self.success_url)
+        except IntegrityError:
+            return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
     def update_category(self, request, pk):
-        form = CategoryDetailForm(request.POST)
-
+        form = CategoryDetailForm(request.POST, initial={"pk": pk})
+        print(form.errors)
         if form.is_valid():
-            selected_category = form.cleaned_data.get('category_name')
-
+            selected_category = form.cleaned_data
             update = '''
                     UPDATE store_category 
                     SET category_name = %s
@@ -1028,61 +1039,256 @@ class StorePromotionalProductCreateView(View):
 @method_decorator(login_required, name='dispatch')
 class CheckListView(View):
     template_name = 'store/check/check-list.html'
+    success_url = reverse_lazy('check-list')
 
     def get(self, request):
-        print(request.user.groups.all()[0])
+        form = CheckFilter(request.GET)
+        employee_role = request.user.groups.first().name if request.user.groups.exists() else None
+
         query = """
-        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
-            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
-        FROM store_check AS sc 
-        INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
-        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+            SELECT sc.check_number, sc.print_date, 
+                ROUND((sc.sum_total) * (100 - COALESCE(scc.percent, 0)) / 100, 2) AS discounted_price, 
+                sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) AS employee_name
+            FROM store_check AS sc 
+            INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+            LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
         """
+        query_params = []
+
+        if form.is_valid():
+            query += " WHERE 1=1"
+            employee_id = form.cleaned_data.get("employee")
+
+            if employee_role == 'cashier' or employee_id:
+                if employee_role == 'cashier':
+                    query += " AND se.id_employee = (SELECT id_employee FROM auth_user WHERE id = %s)"
+                    query_params.append(request.user.id)
+
+                if employee_id:
+                    query += " AND se.id_employee = %s"
+                    query_params.append(employee_id)
+
+            start_date = form.cleaned_data.get('start_date')
+            end_date = form.cleaned_data.get('end_date')
+
+            if start_date:
+                query += " AND sc.print_date >= %s"
+                query_params.append(start_date)
+
+            if end_date:
+                query += " AND sc.print_date <= %s"
+                query_params.append(end_date)
+        else:
+            with connection.cursor() as cursor:
+                cursor.execute(query, query_params)
+                checks = cursor.fetchall()
+
+            return render(request, template_name=self.template_name, context={
+                'form': CheckFilter(),
+                'checks': checks
+            })
 
         with connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, query_params)
             checks = cursor.fetchall()
 
         return render(request, template_name=self.template_name, context={
+            'form': form,
             'checks': checks
         })
 
 
+@method_decorator(login_required, name='dispatch')
+class CheckCreateView(View):
+    template_name = 'store/check/check-add.html'
+    success_url = reverse_lazy('check-list')
+
+    def get(self, request):
+        selected_products = request.session.get('check_temporary_list')
+
+        form = CheckDetailForm()
+        all_products_query = """
+        SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number 
+        FROM store_store_product AS ssp
+        INNER JOIN public.store_product AS sp 
+        ON sp.id_product = ssp.id_product_id
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(all_products_query)
+            all_products = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'selected_products': selected_products,
+            'all_products': all_products
+        })
+
+    def post(self, request):
+        selected_products = request.session.get('check_temporary_list')
+        if selected_products:
+            if request.POST.get('action') != 'delete':
+                with transaction.atomic():
+                    with connection.cursor() as cursor:
+                        customer_card_number = request.POST.get('card_number', '')
+                        if customer_card_number == '':
+                            customer_card_number = None
+
+                        sum_total = sum([product[2] * product[3] for product in selected_products])
+                        current_cashier = request.user.id
+
+                        employee_id_query = "SELECT id_employee FROM auth_user WHERE id = %s"
+
+                        cursor.execute(employee_id_query, [current_cashier])
+                        current_employee_id = cursor.fetchall()[0][0]
+
+                        cursor.execute("SELECT COUNT(*) FROM store_check")
+                        check_count = cursor.fetchone()[0]
+
+                        check_number = f'CHK{check_count + 1:05d}'
+
+                        check_insert_query = """
+                        INSERT INTO store_check(check_number, print_date, sum_total, vat, card_number_id, id_employee_id) 
+                        VALUES (%s, CURRENT_TIMESTAMP, %s, %s, %s, %s) 
+                        """
+
+                        cursor.execute(check_insert_query,
+                                       [check_number, sum_total, sum_total * 0.2, customer_card_number,
+                                        current_employee_id])
+
+                        for product in selected_products:
+                            product_upc = product[0]
+                            product_price = product[2]
+                            product_amount = product[3]
+
+                            product_insert = """
+                            INSERT INTO store_sale(product_number, selling_price, check_number_id, "UPC_id") 
+                            VALUES (%s, %s, %s, %s)
+                            """
+                            cursor.execute(product_insert, [product_amount, product_price, check_number, product_upc])
+
+                            store_product_update = """
+                            UPDATE store_store_product SET products_number = products_number - %s WHERE "UPC" = %s
+                            """
+                            cursor.execute(store_product_update, [product_amount, product_upc])
+
+            request.session['check_temporary_list'] = []
+
+        return redirect(self.success_url)
+
+
+@method_decorator(login_required, name='dispatch')
+class CheckProductDetailView(View):
+    template_name = 'store/check/check-product-detail.html'
+    success_url = reverse_lazy('check-add')
+
+    def get(self, request, upc):
+        form = CheckProductDetailForm()
+
+        product_query = """
+        SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
+        INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
+        LEFT JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
+        WHERE ssp."UPC" = %s;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(product_query, [upc])
+            product = cursor.fetchall()
+
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'product': product
+        })
+
+    def post(self, request, upc):
+        form = CheckProductDetailForm(request.POST)
+
+        if form.is_valid():
+            quantity = int(form.cleaned_data.get('quantity'))
+            selected_upc = request.POST.get('product_upc')
+            selected_amount = request.POST.get('quantity')
+
+            check_temporary_list = request.session.get('check_temporary_list', [])
+
+            for product in check_temporary_list:
+                if product[0] == selected_upc:
+                    try:
+                        form.check_product_stock(product[3] + quantity, current_quantity=product[3])
+                    except:
+                        return redirect(reverse_lazy('check-product-detail', kwargs={'upc': selected_upc}))
+                    product[3] += quantity
+                    request.session['check_temporary_list'] = check_temporary_list
+                    return redirect(self.success_url)
+
+            selected_product_query = f"""
+            SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), %s
+            FROM store_store_product AS ssp
+            INNER JOIN public.store_product AS sp
+            ON sp.id_product = ssp.id_product_id
+            WHERE ssp."UPC" = %s
+            """
+
+            with connection.cursor() as cursor:
+                cursor.execute(selected_product_query, [int(selected_amount), selected_upc])
+                selected_product = cursor.fetchall()[0]
+
+            selected_product = list(selected_product)
+            selected_product[2] = float(selected_product[2])
+            check_temporary_list.append(selected_product)
+
+            request.session['check_temporary_list'] = check_temporary_list
+
+            print(request.session['check_temporary_list'])
+            return redirect(self.success_url)
+        else:
+            product_query = """
+            SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
+            INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
+            INNER JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
+            WHERE ssp."UPC" = %s;
+            """
+
+            with connection.cursor() as cursor:
+                cursor.execute(product_query, [upc])
+                product = cursor.fetchall()
+
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'product': product
+            })
+
+
+@method_decorator(login_required, name='dispatch')
 class CheckDetailsView(View):
     template_name = 'store/check/check-detail.html'
 
     def get(self, request, pk):
         query = """
-        SELECT sc.check_number, sc.print_date, ROUND((sc.sum_total) * (100 - scc.percent) / 100, 2)  AS discounted_price, 
+        SELECT sc.check_number, sc.print_date, ROUND(sc.sum_total, 2), ROUND((sc.sum_total) * (100 - 
+        CASE 
+            WHEN sc.card_number_id IS NULL THEN 0
+            ELSE COALESCE(scc.percent, 0)
+        END) / 100, 2) AS discounted_price, scc.percent, 
             sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
         FROM store_check AS sc 
         INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
-        INNER JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+        LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
         WHERE sc.check_number = %s
         """
 
         all_products_query = """
-        SELECT
-            ss."UPC_id",
-            upc_pn.product_name,
-            ss.product_number,
-            ss.selling_price,
-            COALESCE(cp.percent, 0) AS percent,
-            ROUND((ss.product_number * ss.selling_price) * (100 - percent) / 100, 2) AS discounted_price
-        FROM store_sale AS ss
-        INNER JOIN (SELECT ssp."UPC", sp.product_name
-                    FROM store_store_product AS ssp
-                    INNER JOIN store_product AS sp
-                    ON ssp.id_product_id = sp.id_product
-        ) AS upc_pn
-        ON ss."UPC_id" = upc_pn."UPC"
-        LEFT JOIN (SELECT sc.check_number, scc.percent
-                    FROM store_check AS sc
-                    INNER JOIN store_customer_card AS scc
-                    ON sc.card_number_id = scc.card_number
-        ) AS cp
-        ON ss.check_number_id = cp.check_number
-        WHERE ss.check_number_id = %s;
+        SELECT 
+            ss."UPC_id", ps.product_name, ss.product_number, ss.selling_price
+        FROM
+            store_sale AS ss
+        INNER JOIN (SELECT sp.product_name, ssp."UPC" 
+                    FROM store_product AS sp 
+                    INNER JOIN store_store_product AS ssp 
+                    ON sp.id_product = ssp.id_product_id) AS ps
+        ON ps."UPC" = ss."UPC_id"
+        WHERE
+            ss.check_number_id = %s
         """
 
         with connection.cursor() as cursor:
@@ -1110,14 +1316,17 @@ class UserLoginView(View):
     def post(self, request):
         next = request.GET.get('next')
         form = UserLoginForm(request.POST or None)
-        if (form.is_valid()):
+        if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
-            login(request, user)
-            if next:
-                return redirect(next)
-            return redirect('/products')
+            if user is not None:
+                login(request, user)
+                if next:
+                    return redirect(next)
+                return redirect('/products')
+        else:
+            return render(request, self.template_name, {'form': form, 'msg': 'Invalid username or password'})
 
 
 class UserRegisterView(View):
@@ -1145,7 +1354,8 @@ class UserRegisterView(View):
                                                         is_staff, is_active, date_joined, id_employee) 
                                                         VALUES (%s, %s, %s, %s, %s, %s, %s,%s, CURRENT_TIMESTAMP, %s)
                                """,
-                               [selected_password, False, selected_username, employee[0], employee[1], '', selected_empl==2, True
+                               [selected_password, False, selected_username, employee[0], employee[1], '',
+                                selected_empl == 2, True
                                    , selected_empl])
 
             new_user = authenticate(username=selected_username, password=form.cleaned_data.get('password'))
@@ -1162,7 +1372,6 @@ class UserRegisterView(View):
             if next:
                 return redirect(next)
             return redirect('/')
-
         context = {
             'form': form,
         }
@@ -1172,3 +1381,108 @@ class UserRegisterView(View):
 def logout_view(request):
     logout(request)
     return redirect('/accounts/login')
+
+
+def user_profile(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""SELECT e.* 
+                       FROM auth_user a JOIN store_employee e ON a.id_employee = e.id_employee
+                       WHERE a.id = %s """, [request.user.id])
+        data = cursor.fetchall()
+        print(data)
+        employee = dict()
+        employee['id'] = data[0][0]
+        employee['employee_surname'] = data[0][1]
+        employee['employee_name'] = data[0][2]
+        employee['employee_patronymic'] = data[0][3]
+        employee['employee_role'] = data[0][4]
+        employee['employee_salary'] = data[0][5]
+        employee['employee_date_of_birth'] = data[0][6]
+        employee['employee_date_of_start'] = data[0][7]
+        employee['employee_phone_number'] = data[0][8]
+        employee['employee_city'] = data[0][9]
+        employee['employee_street'] = data[0][10]
+        employee['employee_zip_code'] = data[0][11]
+        return render(request, "profile/profile.html", {"employee": employee})
+
+
+class StatisticsTab(View):
+    def get(self, request):
+        form = StatsDateOptions(request.GET)
+
+        not_purchased_products_date = form.cleaned_data.get('products_date') if form.is_valid() else None
+        not_active_customers_date = form.cleaned_data.get('customers_date') if form.is_valid() else None
+
+        not_purchased_products_date = not_purchased_products_date or date(1900, 1, 1)
+        not_active_customers_date = not_active_customers_date or date(1900, 1, 1)
+
+        with connection.cursor() as cursor:
+            # Query for top 10 products by revenue
+            cursor.execute("""
+                SELECT p.id_product, p.product_name, SUM(s.selling_price * s.product_number) AS total_revenue
+                FROM store_product p JOIN store_store_product sp ON p.id_product = sp.id_product_id
+                                     JOIN store_sale s ON sp."UPC" = s."UPC_id"
+                GROUP BY 1, 2
+                ORDER BY total_revenue DESC LIMIT 10
+                        """)
+            top_10_products_with_biggest_revenue = cursor.fetchall()
+            chart_1_labels = [row[1] for row in top_10_products_with_biggest_revenue]
+            chart_1_values = [float(row[2]) for row in top_10_products_with_biggest_revenue]
+
+            # Query for products that were not purchased within a specific date range
+            cursor.execute("""
+                SELECT DISTINCT p.product_name
+                FROM store_product p JOIN store_store_product sp ON p.id_product = sp.id_product_id
+                                     JOIN store_sale s ON sp."UPC" = s."UPC_id"
+                WHERE sp."UPC" NOT IN ( 
+                    SELECT "UPC_id"
+                    FROM store_sale s JOIN store_check c ON s.check_number_id = c.check_number
+                    WHERE c.print_date NOT IN ( 
+                        SELECT print_date
+                        FROM store_check
+                        WHERE print_date < %s
+                    )
+                )
+            """, [not_purchased_products_date])
+            not_purchased_products_within_date = cursor.fetchall()
+            list_1 = [row[0] for row in not_purchased_products_within_date]
+
+            # Query for top 5 most productive cashiers
+            cursor.execute("""
+                SELECT CONCAT(e.empl_name, ' ', e.empl_surname) AS cashier_name, SUM(c.sum_total) AS total_sales
+                FROM store_employee e 
+                JOIN store_check c ON e.id_employee = c.id_employee_id
+                GROUP BY e.empl_name, e.empl_surname
+                ORDER BY total_sales DESC LIMIT 5;
+            """)
+            most_productive_cashiers = cursor.fetchall()
+            chart_2_labels = [row[0] for row in most_productive_cashiers]
+            chart_2_values = [float(row[1]) for row in most_productive_cashiers]
+
+            # Query for inactive customers within a specific date range
+            cursor.execute("""
+                SELECT DISTINCT CONCAT(scc.cust_name, ' ', scc.cust_surname)
+                FROM store_customer_card scc
+                LEFT JOIN store_check sc ON scc.card_number = sc.card_number_id
+                WHERE scc.card_number NOT IN (
+                        SELECT c.card_number_id
+                        FROM store_check c
+                        WHERE c.print_date NOT IN (
+                                SELECT print_date
+                                FROM store_check
+                                WHERE print_date < %s
+                        )
+                );
+            """, [not_active_customers_date])
+            not_active_customers_within_date = cursor.fetchall()
+            list_2 = [row[0] for row in not_active_customers_within_date]
+
+        return render(request, 'store/statistics/statistics.html', {
+            'form': form,
+            'chart_1_labels': chart_1_labels,
+            'chart_1_values': chart_1_values,
+            'chart_2_labels': chart_2_labels,
+            'chart_2_values': chart_2_values,
+            'list_1': list_1,
+            'list_2': list_2
+        })

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    All Store-Products
+{% endblock %}
+
+{% block css_files %}
+
+{% endblock %}
+
+{% block content %}
+    <section id="all-store-products">
+        <form method="GET" action="{% url 'store-product-list' %}">
+            
+             <label for="product_upc">Product UPC:</label>
+            {{ form.product_upc }}
+           
+            <label for="discount_available">Only discount products:</label>
+            {{ form.discount_available}}
+            
+            <label for="discount_unavailable">Only full price products:</label>
+            {{ form.discount_unavailable}}
+            
+            <label for="sort_by_name">Sort by name:</label>
+            {{ form.sort_by_name}}
+            
+            <label for="sort_by_quantity">Sort by quantity:</label>
+            {{ form.sort_by_quantity}}
+            
+            <button type="submit" class="button filter-btn">Filter</button>
+            
+        </form>
+         {%if user.groups.first.name == "manager" %}
+        <a href="{% url 'store-product-add' %}">
+            <div class="button">
+                Add Store Product
+            </div>
+        </a>
+        {% endif %}
+        <table>
+            <thead>
+            <tr>
+                <th>UPC</th>
+                <th>Product Name</th>
+                <th>Characteristics</th>
+                <th>Selling Price</th>
+                <th>Number of Products</th>
+                <th>On Sales</th>
+                <th>Update Sale</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for product in store_products %}
+                <tr style="cursor:pointer;" {%if user.groups.first.name == "manager" %}onclick="window.location='{% url 'store-product-details' pk=product.0 %}'"{%endif%}>
+                    <td>{{ product.0 }}</td>
+                    <td>{{ product.1}}</td>
+                    <td>{{ product.2 }}</td>
+                    <td>{{ product.3}}</td>
+                    <td>{{ product.4}}</td>
+                    <td>{{ product.5}}</td>
+                    <td>
+                        {% if product.5 %}
+                            <button type="button" disabled>Delete sale</button>
+                        {% else %}
+                            <button type="button">Add sale</button>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">No products found</td>
+                </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

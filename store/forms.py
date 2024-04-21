@@ -151,11 +151,8 @@ class CheckProductDetailForm(forms.Form):
             cursor.execute(query, [product_upc])
             store_quantity = cursor.fetchall()[0][0]
 
-        print(product_upc)
-        print(store_quantity)
-
-        if quantity > int(store_quantity):
-            raise forms.ValidationError(f"Only {store_quantity - quantity} units of this product are left in stock")
+        if 0 < quantity > int(store_quantity):
+            raise forms.ValidationError(f"Only {store_quantity} units of this product are only available in stock")
 
     def clean(self):
         cleaned_data = super().clean()

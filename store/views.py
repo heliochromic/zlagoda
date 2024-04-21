@@ -40,7 +40,6 @@ class EmployeeListView(View):
 
             if selected_role:
                 query += 'WHERE empl_role = %s '
-                print("This role ", selected_role)
                 query_params.append(selected_role)
 
             if empl_name:
@@ -180,7 +179,6 @@ class EmployeeDetailView(View):
 
     def update_employee(self, request, pk):
         form = EmployeeDetailForm(request.POST, initial={'pk': pk})
-        print(form.errors)
         if form.is_valid():
             params = []
             selected_id = pk
@@ -251,7 +249,6 @@ class ClientListView(View):
 
             if discount:
                 query += 'WHERE percent = %s '
-                print("This discount ", discount)
                 query_params.append(discount)
 
             if cust_name:
@@ -379,7 +376,6 @@ class ClientUpdateView(View):
 
     def update_client(self, request, pk):
         form = ClientDetailForm(request.POST)
-        print(form.errors)
         if form.is_valid():
             params = []
             selected_id = pk
@@ -515,7 +511,6 @@ class CategoryUpdateView(View):
 
     def update_category(self, request, pk):
         form = CategoryDetailForm(request.POST, initial={"pk": pk})
-        print(form.errors)
         if form.is_valid():
             selected_category = form.cleaned_data
             update = '''
@@ -740,6 +735,8 @@ class CheckListView(View):
                 query += " AND sc.print_date <= %s"
                 query_params.append(end_date)
         else:
+            query += "ORDER BY sc.print_date DESC;"
+
             with connection.cursor() as cursor:
                 cursor.execute(query, query_params)
                 checks = cursor.fetchall()
@@ -748,6 +745,8 @@ class CheckListView(View):
                 'form': CheckFilter(),
                 'checks': checks
             })
+
+        query += "ORDER BY sc.print_date DESC;"
 
         with connection.cursor() as cursor:
             cursor.execute(query, query_params)
@@ -773,10 +772,20 @@ class CheckCreateView(View):
         FROM store_store_product AS ssp
         INNER JOIN public.store_product AS sp 
         ON sp.id_product = ssp.id_product_id
+        WHERE ssp.products_number != 0
         """
 
+        params = []
+
+        if selected_products and len(selected_products) > 0:
+            selected_product_upcs = [product[0] for product in selected_products]
+            all_products_query += 'AND ssp."UPC" NOT IN %s'
+            params.append(tuple(selected_product_upcs))
+
+        all_products_query += "ORDER BY sp.product_name;"
+
         with connection.cursor() as cursor:
-            cursor.execute(all_products_query)
+            cursor.execute(all_products_query, params)
             all_products = cursor.fetchall()
 
         return render(request, template_name=self.template_name, context={
@@ -795,7 +804,7 @@ class CheckCreateView(View):
                         if customer_card_number == '':
                             customer_card_number = None
 
-                        sum_total = sum([product[2] * product[3] for product in selected_products])
+                        sum_total = sum([float(product[2]) * int(product[3]) for product in selected_products])
                         current_cashier = request.user.id
 
                         employee_id_query = "SELECT id_employee FROM auth_user WHERE id = %s"
@@ -843,18 +852,24 @@ class CheckProductDetailView(View):
     template_name = 'store/check/check-product-detail.html'
     success_url = reverse_lazy('check-add')
 
+    product_query = """
+    SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
+    INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
+    LEFT JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
+    WHERE ssp."UPC" = %s;
+    """
+
     def get(self, request, upc):
+        check_temporary_list = request.session.get('check_temporary_list', [])
+
         form = CheckProductDetailForm()
 
-        product_query = """
-        SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
-        INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
-        LEFT JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
-        WHERE ssp."UPC" = %s;
-        """
+        for product in check_temporary_list:
+            if product[0] == upc:
+                form = CheckProductDetailForm(initial={'quantity': product[3]})
 
         with connection.cursor() as cursor:
-            cursor.execute(product_query, [upc])
+            cursor.execute(self.product_query, [upc])
             product = cursor.fetchall()
 
         return render(request, template_name=self.template_name, context={
@@ -866,7 +881,6 @@ class CheckProductDetailView(View):
         form = CheckProductDetailForm(request.POST)
 
         if form.is_valid():
-            quantity = int(form.cleaned_data.get('quantity'))
             selected_upc = request.POST.get('product_upc')
             selected_amount = request.POST.get('quantity')
 
@@ -874,11 +888,7 @@ class CheckProductDetailView(View):
 
             for product in check_temporary_list:
                 if product[0] == selected_upc:
-                    try:
-                        form.check_product_stock(product[3] + quantity, current_quantity=product[3])
-                    except:
-                        return redirect(reverse_lazy('check-product-detail', kwargs={'upc': selected_upc}))
-                    product[3] += quantity
+                    product[3] = selected_amount
                     request.session['check_temporary_list'] = check_temporary_list
                     return redirect(self.success_url)
 
@@ -900,18 +910,10 @@ class CheckProductDetailView(View):
 
             request.session['check_temporary_list'] = check_temporary_list
 
-            print(request.session['check_temporary_list'])
             return redirect(self.success_url)
         else:
-            product_query = """
-            SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
-            INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
-            INNER JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
-            WHERE ssp."UPC" = %s;
-            """
-
             with connection.cursor() as cursor:
-                cursor.execute(product_query, [upc])
+                cursor.execute(self.product_query, [upc])
                 product = cursor.fetchall()
 
             return render(request, template_name=self.template_name, context={
@@ -940,7 +942,7 @@ class CheckDetailsView(View):
 
         all_products_query = """
         SELECT 
-            ss."UPC_id", ps.product_name, ss.product_number, ss.selling_price
+            ss."UPC_id", ps.product_name, ss.product_number, ROUND(ss.selling_price, 2)
         FROM
             store_sale AS ss
         INNER JOIN (SELECT sp.product_name, ssp."UPC" 
@@ -1050,7 +1052,6 @@ def user_profile(request):
                        FROM auth_user a JOIN store_employee e ON a.id_employee = e.id_employee
                        WHERE a.id = %s """, [request.user.id])
         data = cursor.fetchall()
-        print(data)
         employee = dict()
         employee['id'] = data[0][0]
         employee['employee_surname'] = data[0][1]

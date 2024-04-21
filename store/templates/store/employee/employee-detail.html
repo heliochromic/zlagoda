@@ -52,7 +52,9 @@
 
         <label for="employee_zip_code">Employee Zip Code:</label>
         {{ form.employee_zip_code }}
-
+        {% if request.GET.submit == 'No' %}
+        <p>Can't delete employee until you delete every check connected</p>
+        {% endif %}
         <button type="submit" class="button edit-btn">Edit</button>
     </form>
     <form method="POST" action="{% url 'employee-detail' pk=pk %}">

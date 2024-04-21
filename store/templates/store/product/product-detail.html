@@ -20,7 +20,9 @@
 
         <label for="characteristics">Characteristics:</label>
         {{ form.characteristics }}
-
+        {% if request.GET.submit == 'No' %}
+        <p>Can't delete product until you delete every store product connected</p>
+        {% endif %}
         <button type="submit" class="button edit-btn">Edit</button>
     </form>
     <form method="POST" action="{% url 'product-detail' pk=pk %}">

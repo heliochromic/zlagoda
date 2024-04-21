@@ -169,13 +169,16 @@ class EmployeeDetailView(View):
             return self.update_employee(request, pk)
 
     def delete_employee(self, request, pk):
-        delete = 'DELETE FROM store_employee WHERE id_employee = %s'
+        try:
+            delete = 'DELETE FROM store_employee WHERE id_employee = %s'
 
-        with connection.cursor() as cursor:
-            cursor.execute(delete, [pk])
+            with connection.cursor() as cursor:
+                cursor.execute(delete, [pk])
 
-        messages.success(request, 'Employee deleted successfully')
-        return redirect(self.success_url)
+            messages.success(request, 'Employee deleted successfully')
+            return redirect(self.success_url)
+        except IntegrityError:
+            return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
     def update_employee(self, request, pk):
         form = EmployeeDetailForm(request.POST, initial={'pk': pk})
@@ -366,13 +369,16 @@ class ClientUpdateView(View):
             return self.update_client(request, pk)
 
     def delete_client(self, request, pk):
-        delete = 'DELETE FROM store_customer_card WHERE card_number = %s'
+        try:
+            delete = 'DELETE FROM store_customer_card WHERE card_number = %s'
 
-        with connection.cursor() as cursor:
-            cursor.execute(delete, [pk])
+            with connection.cursor() as cursor:
+                cursor.execute(delete, [pk])
 
-        messages.success(request, 'Client deleted successfully')
-        return redirect(self.success_url)
+            messages.success(request, 'Employee deleted successfully')
+            return redirect(self.success_url)
+        except IntegrityError:
+            return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
     def update_client(self, request, pk):
         form = ClientDetailForm(request.POST)
@@ -645,13 +651,16 @@ class ProductDetailView(View):
             return self.update_product(request, pk)
 
     def delete_product(self, request, pk):
-        delete = 'DELETE FROM store_product WHERE id_product = %s'
+        try:
+            delete = 'DELETE FROM store_product WHERE id_product = %s'
 
-        with connection.cursor() as cursor:
-            cursor.execute(delete, [pk])
+            with connection.cursor() as cursor:
+                cursor.execute(delete, [pk])
 
-        messages.success(request, 'Product added successfully')
-        return redirect(self.success_url)
+            messages.success(request, 'Store product deleted successfully')
+            return redirect(self.success_url)
+        except IntegrityError:
+            return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
     def update_product(self, request, pk):
         form = ProductDetailForm(request.POST)

@@ -60,11 +60,22 @@
                     <td>{{ product.4}}</td>
                     <td>{{ product.5}}</td>
                     <td>
-                        {% if product.5 %}
-                            <button type="button" disabled>Delete sale</button>
-                        {% else %}
-                            <button type="button">Add sale</button>
-                        {% endif %}
+                        <form method="POST" action="{% url 'store-product-list' %}">
+                         {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ product.0 }}">
+    {#                        {% if product.4 %}#}
+    {#                            <button type="button" disabled>Have sale</button>#}
+                            {% if product.5 %}
+                                <input type="hidden" name="action" value="delete">
+                                <button type="submit">Delete sale</button>
+                            {% else %}
+    {#                            <form method="POST" action="{% url 'store-product-list' %}">#}
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="add">
+                                    <button type="submit">Add sale</button>
+    {#                            </form>#}
+                            {% endif %}
+                        </form>
                     </td>
                 </tr>
             {% empty %}

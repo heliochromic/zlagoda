@@ -34,18 +34,32 @@ class StoreProductDetailForm(forms.Form):
     product_upc = forms.CharField(label='Product UPC', max_length=12,
                                   widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}))
     selling_price = forms.DecimalField(label='Selling price', max_digits=13, decimal_places=4)
+
+    def clean_selling_price(self):
+        selling_price = self.cleaned_data['selling_price']
+        if selling_price <= 0:
+            raise forms.ValidationError("Selling price cannot be negative.")
+        return selling_price
+
     products_number = forms.DecimalField(label='Product number')
+
+    def clean_products_number(self):
+        products_number = self.cleaned_data['products_number']
+        if products_number < 0:
+            raise forms.ValidationError("Product number cannot be negative.")
+        return products_number
+
     id_product_id = forms.ModelChoiceField(queryset=Product.objects.all(), label='id product')
 
 
 class StorePromotionalProductDetailForm(forms.Form):
-    product_upc = forms.CharField(label='Product UPC', max_length=12,
-                                  widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}))
     products_number = forms.DecimalField(label='Product number')
 
-
-class StorePromotionalProductUpdateForm(forms.Form):
-    products_number = forms.DecimalField(label='Product number')
+    def clean_products_number(self):
+        products_number = self.cleaned_data['products_number']
+        if products_number < 0:
+            raise forms.ValidationError("Product number cannot be negative.")
+        return products_number
 
 
 class EmployeeFilterForm(forms.Form):

@@ -14,11 +14,10 @@
     <p>Product Name: {{ prod_name }}</p>
     <p>Characteristics: {{ prod_characteristics }}</p>
     {% if promotional_product %}
-    <p>Selling price: {{ selling_price }}</p>
+    <p>Selling price: {{ selling_price}}</p>
     {% endif %}
     <form method="POST" action="{% url 'store-product-details' pk=pk %}">
         {% csrf_token %}
-
         <p style="display: none">
             <label for="product_upc">Product UPC:</label>
             {{ form.product_upc }}
@@ -36,13 +35,13 @@
         <button type="submit" class="button edit-btn">Edit</button>
 
     </form>
-    {% if upc_promotional == null and not promotional_product %}
-       <a href="{% url 'store-product-add-promotional' pk=pk %}">
-            <div class="button edit-btn">
-                Add promotional product
-            </div>
-        </a>
-    {% endif %}
+{#    {% if upc_promotional == null and not promotional_product %}#}
+{#       <a href="{% url 'store-product-add-promotional' pk=pk %}">#}
+{#            <div class="button edit-btn">#}
+{#                Add promotional product#}
+{#            </div>#}
+{#        </a>#}
+{#    {% endif %}#}
     <form method="POST" action="{% url 'store-product-details' pk=pk %}">
         {% csrf_token %}
         <input type="hidden" name="action" value="delete">

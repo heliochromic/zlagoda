@@ -1,6 +1,4 @@
-/* styles.css */
 form {
-    width: 60%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -9,26 +7,27 @@ form {
 }
 
 form label {
-    margin: 20px 0;
-    width: 100%;
     text-align: left;
+    margin-top: 10px;
+    width: 500px;
 }
 
 input[type="text"],
+input[type="password"],
 input[type="date"],
 input[type="number"],
 select,
-textarea {
-    width: 100%;
+textarea,
+.button{
     height: 40px;
     box-sizing: border-box;
-    margin-bottom: 20px;
+    margin: 10px 0;
+    width: 500px;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 16px;
 }
-
 
 textarea {
     height: 100px;
@@ -38,7 +37,6 @@ textarea {
 }
 
 form button[type="submit"] {
-    width: 100%;
     margin: 10px 0 0 0;
 }
 
@@ -47,10 +45,21 @@ form button.button {
 }
 
 #new-account {
-    width: 60%; /* Set the width of the button */ /* Set a max-width for responsiveness */
-    margin: 20px auto; /* Center the button horizontally */
-    text-align: center; /* Center the text inside the button */
+    margin: 20px auto;
+    text-align: center;
 }
+
+#log-in {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.center-content {
+    text-align: center;
+    padding: 20px;
+}
+
 @media print {
     #all-products > form {
         display: none;

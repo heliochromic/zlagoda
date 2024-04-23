@@ -13,15 +13,15 @@
     <form method="POST" action="{% url 'user-register' %}">
         {% csrf_token %}
 
-        <label for="username">username:</label>
+        <label for="username">Username:</label>
         {{ form.username }}
 
-       <label for="password">password:</label>
+       <label for="password">Password:</label>
         {{ form.password }}
 
         <label for="empl">Employee:</label>
         {{ form.empl }}
 
-        <button type="submit" class="button">Add</button>
+        <button type="submit" class="button" id="register">Add</button>
     </form>
 {% endblock %}

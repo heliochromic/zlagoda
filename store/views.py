@@ -744,7 +744,7 @@ class CheckListView(View):
                 query += " AND sc.print_date <= %s"
                 query_params.append(end_date)
         else:
-            query += "ORDER BY sc.print_date DESC;"
+            query += " ORDER BY sc.print_date DESC;"
 
             with connection.cursor() as cursor:
                 cursor.execute(query, query_params)
@@ -755,7 +755,7 @@ class CheckListView(View):
                 'checks': checks
             })
 
-        query += "ORDER BY sc.print_date DESC;"
+        query += " ORDER BY sc.print_date DESC;"
 
         with connection.cursor() as cursor:
             cursor.execute(query, query_params)

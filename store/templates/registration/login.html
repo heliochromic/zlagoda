@@ -11,22 +11,31 @@
 
 {% block content %}
 
-    <form method="POST" action="{% url 'user-login' %}">
-        {% csrf_token %}
+<section id="log-in">
+    <div class="center-content">
+        <form method="POST" action="{% url 'user-login' %}">
+            {% csrf_token %}
 
-        <label for="username">username:</label>
-        {{ form.username }}
+            <label for="username">Username:</label>
+            {{ form.username }}
 
-        <label for="password">password:</label>
-        {{ form.password }}
-        {% if msg %}
-            <p>{{ msg }}}</p>
-        {% endif %}
-        <button type="submit" class="button">Log in</button>
-    </form>
-    <a href="{% url 'user-register' %}">
-        <div id="new-account" class="button filter-btn">
-            Create new account
-        </div>
-    </a>
+            <label for="password">Password:</label>
+            {{ form.password }}
+
+            {% if msg %}
+                <p>{{ msg }}</p>
+            {% endif %}
+
+            <button type="submit" class="button" id="log-in-btn">Log in</button>
+        </form>
+
+        <a href="{% url 'user-register' %}">
+            <div id="new-account" class="button filter-btn">
+                Create new account
+            </div>
+        </a>
+    </div>
+</section>
+
+
 {% endblock %}

@@ -69,6 +69,7 @@ form label {
 form input[type="text"],
 form input[type="date"],
 form input[type="number"],
+form input[type="password"],
 form select {
     flex: 3;
     height: 40px;
@@ -229,9 +230,26 @@ canvas {
 
 label {
     font-weight: bold;
-    margin-bottom: 10px;
+    margin: 5px 0;
 }
 
 #statistics p {
     margin: 2px;
+}
+
+.fixed-image {
+    position: absolute;
+    /*z-index: 999;*/
+    width: 200px;
+    height: auto;
+}
+
+#kitty_1 {
+    top: 500px;
+    left: 0;
+}
+
+#kitty_2 {
+    top: 100px;
+    right: 0;
 }

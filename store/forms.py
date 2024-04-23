@@ -70,8 +70,6 @@ class EmployeeDetailForm(forms.Form):
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM store_employee WHERE id_employee = %s", [id_employee])
             data = cursor.fetchall()
-            if len(data) > 0:
-                raise forms.ValidationError("This employee ID already exists.")
         return id_employee
 
     employee_patronymic = forms.CharField(max_length=50, required=False,
@@ -180,11 +178,8 @@ class CheckProductDetailForm(forms.Form):
             cursor.execute(query, [product_upc])
             store_quantity = cursor.fetchall()[0][0]
 
-        print(product_upc)
-        print(store_quantity)
-
-        if quantity > int(store_quantity):
-            raise forms.ValidationError(f"Only {store_quantity - quantity} units of this product are left in stock")
+        if 0 < quantity > int(store_quantity):
+            raise forms.ValidationError(f"Only {store_quantity} units of this product are only available in stock")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -224,7 +219,7 @@ class CheckFilter(forms.Form):
 
 class UserLoginForm(forms.Form):
     username = forms.CharField(max_length=20, help_text="Enter username")
-    password = forms.CharField(max_length=50, help_text="Enter password")
+    password = forms.CharField(max_length=50, help_text="Enter password", widget=forms.PasswordInput)
 
     def clean(self, *args, **kwargs):
         username = self.cleaned_data.get("username")
@@ -248,7 +243,7 @@ user = get_user_model()
 class UserRegisterForm(forms.Form):
     empl = forms.ChoiceField(choices=None)
     username = forms.CharField(max_length=20, help_text="Enter username")
-    password = forms.CharField(widget=forms.PasswordInput)
+    password = forms.CharField(widget=forms.PasswordInput, help_text="Enter password")
 
     class Meta:
         model = user

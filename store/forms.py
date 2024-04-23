@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.core.exceptions import ValidationError
 from django.db import connection
 
+from .models import Category, Employee, Product, Store_Product
 from .models import Category, Employee, Product, Customer_Card
 
 
@@ -17,6 +18,48 @@ class ProductDetailForm(forms.Form):
     product_name = forms.CharField(label='Product Name', max_length=100)
     characteristics = forms.CharField(label='Characteristics', widget=forms.Textarea)
     category = forms.ModelChoiceField(queryset=Category.objects.all(), label='Category', empty_label='All Categories')
+
+
+class StoreProductFilterForm(forms.Form):
+    product_upc = forms.CharField(label='Product UPC', max_length=12,
+                                  widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}),
+                                  required=False)
+    discount_available = forms.BooleanField(label='Only discount products', required=False)
+    discount_unavailable = forms.BooleanField(label='Only full price products', required=False)
+    sort_by_name = forms.BooleanField(label='Sort by name', required=False)
+    sort_by_quantity = forms.BooleanField(label='Sort by quantity', required=False)
+
+
+class StoreProductDetailForm(forms.Form):
+    product_upc = forms.CharField(label='Product UPC', max_length=12,
+                                  widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}))
+    selling_price = forms.DecimalField(label='Selling price', max_digits=13, decimal_places=4)
+
+    def clean_selling_price(self):
+        selling_price = self.cleaned_data['selling_price']
+        if selling_price <= 0:
+            raise forms.ValidationError("Selling price cannot be negative.")
+        return selling_price
+
+    products_number = forms.DecimalField(label='Product number')
+
+    def clean_products_number(self):
+        products_number = self.cleaned_data['products_number']
+        if products_number < 0:
+            raise forms.ValidationError("Product number cannot be negative.")
+        return products_number
+
+    id_product_id = forms.ModelChoiceField(queryset=Product.objects.all(), label='id product')
+
+
+class StorePromotionalProductDetailForm(forms.Form):
+    products_number = forms.DecimalField(label='Product number')
+
+    def clean_products_number(self):
+        products_number = self.cleaned_data['products_number']
+        if products_number < 0:
+            raise forms.ValidationError("Product number cannot be negative.")
+        return products_number
 
 
 class EmployeeFilterForm(forms.Form):

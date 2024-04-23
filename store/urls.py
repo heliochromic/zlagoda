@@ -28,7 +28,7 @@ urlpatterns = [
     # For store-products URLs
     path('store-products/', views.StoreProductListView.as_view(), name='store-product-list'),
     path('store-products/add/', views.StoreProductCreateView.as_view(), name='store-product-add'),
-    path('store-products/<int:pk>', views.StoreProductUpdateView.as_view(), name='store-product-details'),
+    path('store-products/<str:pk>', views.StoreProductUpdateView.as_view(), name='store-product-details'),
 
     # For check URLs
     path('check/', views.CheckListView.as_view(), name='check-list'),

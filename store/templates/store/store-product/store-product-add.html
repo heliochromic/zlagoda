@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Add Store_Product
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <form method="POST" action="{% url 'store-product-add' %}">
+        {% csrf_token %}
+        <label for="product_upc">Product UPC:</label>
+        {{ form.product_upc }}
+        
+        <label for="id_product_id">Id product:</label>
+        {{ form.id_product_id }}
+        
+        <label for="selling_price">Selling price:</label>
+        {{ form.selling_price }}
+    
+        <label for="products_number">Products Number:</label>
+        {{ form.products_number }}
+        
+        <button type="submit" class="button">Add</button>
+    </form>
+{% endblock %}

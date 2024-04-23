@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Store_Product Details
+{% endblock %}
+
+{% block css_files %}
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <p>Product UPC: {{ upc_prod }}</p>
+    <p>Product Name: {{ prod_name }}</p>
+    <p>Characteristics: {{ prod_characteristics }}</p>
+    {% if promotional_product %}
+    <p>Selling price: {{ selling_price}}</p>
+    {% endif %}
+    <form method="POST" action="{% url 'store-product-details' pk=pk %}">
+        {% csrf_token %}
+        <p style="display: none">
+            <label for="product_upc">Product UPC:</label>
+            {{ form.product_upc }}
+        </p>
+        <p style="display: none">
+            <label for="id_product_id">Id product:</label>
+            {{ form.id_product_id }}
+        </p>
+        {% if not promotional_product %}
+            <label for="selling_price">Selling price:</label>
+            {{ form.selling_price }}
+        {% endif %}
+        <label for="products_number">Products Number:</label>
+        {{ form.products_number }}
+        <button type="submit" class="button edit-btn">Edit</button>
+
+    </form>
+{#    {% if upc_promotional == null and not promotional_product %}#}
+{#       <a href="{% url 'store-product-add-promotional' pk=pk %}">#}
+{#            <div class="button edit-btn">#}
+{#                Add promotional product#}
+{#            </div>#}
+{#        </a>#}
+{#    {% endif %}#}
+    <form method="POST" action="{% url 'store-product-details' pk=pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="button delete-btn">Delete</button>
+    </form>
+{% endblock %}

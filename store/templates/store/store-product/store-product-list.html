@@ -6,37 +6,43 @@
 {% endblock %}
 
 {% block css_files %}
-
+    <style>
+        @media print {
+            section form, a {
+                display: none !important;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
     <section id="all-store-products">
         <form method="GET" action="{% url 'store-product-list' %}">
-            
-             <label for="product_upc">Product UPC:</label>
+
+            <label for="product_upc">Product UPC:</label>
             {{ form.product_upc }}
-           
+
             <label for="discount_available">Only discount products:</label>
-            {{ form.discount_available}}
-            
+            {{ form.discount_available }}
+
             <label for="discount_unavailable">Only full price products:</label>
-            {{ form.discount_unavailable}}
-            
+            {{ form.discount_unavailable }}
+
             <label for="sort_by_name">Sort by name:</label>
-            {{ form.sort_by_name}}
-            
+            {{ form.sort_by_name }}
+
             <label for="sort_by_quantity">Sort by quantity:</label>
-            {{ form.sort_by_quantity}}
-            
+            {{ form.sort_by_quantity }}
+
             <button type="submit" class="button filter-btn">Filter</button>
-            
+
         </form>
-         {%if user.groups.first.name == "manager" %}
-        <a href="{% url 'store-product-add' %}">
-            <div class="button">
-                Add Store Product
-            </div>
-        </a>
+        {% if user.groups.first.name == "manager" %}
+            <a href="{% url 'store-product-add' %}">
+                <div class="button">
+                    Add Store Product
+                </div>
+            </a>
         {% endif %}
         <table>
             <thead>
@@ -52,19 +58,28 @@
             </thead>
             <tbody>
             {% for product in store_products %}
-                <tr style="cursor:pointer;" {%if user.groups.first.name == "manager" %}onclick="window.location='{% url 'store-product-details' pk=product.0 %}'"{%endif%}>
+                <tr style="cursor:pointer;"
+                    {% if user.groups.first.name == "manager" %}onclick="window.location='{% url 'store-product-details' pk=product.0 %}'"{% endif %}>
                     <td>{{ product.0 }}</td>
-                    <td>{{ product.1}}</td>
+                    <td>{{ product.1 }}</td>
                     <td>{{ product.2 }}</td>
-                    <td>{{ product.3}}</td>
-                    <td>{{ product.4}}</td>
-                    <td>{{ product.5}}</td>
+                    <td>{{ product.3 }}</td>
+                    <td>{{ product.4 }}</td>
+                    <td>{{ product.5 }}</td>
                     <td>
-                        {% if product.5 %}
-                            <button type="button" disabled>Delete sale</button>
-                        {% else %}
-                            <button type="button">Add sale</button>
-                        {% endif %}
+                        <form method="POST" action="{% url 'store-product-list' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ product.0 }}">
+                            {% if product.5 %}
+                                <input type="hidden" name="action" value="delete">
+                                <button type="submit" class="button delete-btn">Delete sale</button>
+                            {% else %}
+
+                                <input type="hidden" name="action" value="add">
+                                <button type="submit" class="button add-btn">Add sale</button>
+
+                            {% endif %}
+                        </form>
                     </td>
                 </tr>
             {% empty %}

@@ -11,7 +11,24 @@
 
 {% block content %}
     <section id="check-product-detail">
-        {{ product }}
+        <div class="product-header">
+            <div>
+                <label>Product UPC:</label>
+                {{ product.0 }}
+            </div>
+            <div>
+                <label>Product Name:</label>
+                {{ product.1 }}
+            </div>
+            <div>
+                <label>Price:</label>
+                {{ product.2 }}
+            </div>
+            <div>
+                <label>Available Amount:</label>
+                {{ product.3 }}
+            </div>
+        </div>
         <form method="POST" action="{% url 'check-product-detail' upc=product.0.0 %}">
             {% csrf_token %}
             <input type="hidden" name="product_upc" value="{{ product.0.0 }}"/>

@@ -14,7 +14,9 @@ a {
     color: inherit;
 }
 
-#all-products, #all-employees, #all-clients, #all-categories, #all-checks, #add-check, #check-detail, #check-product-detail, #login, #statistics {
+#all-products, #all-employees, #all-clients, #all-categories,
+#all-checks, #add-check, #check-detail, #check-product-detail,
+#login, #statistics, #all-store-products{
     width: 70%;
     margin: 0 auto;
 }
@@ -173,6 +175,9 @@ tbody tr:hover {
     transform: scale(1.02);
 }
 
+#all-store-products > table > tbody > tr > td > form {
+    margin: 0;
+}
 
 .add-form label {
     display: inline-block;
@@ -198,8 +203,8 @@ tbody tr:hover {
 
 #statistics {
     display: flex;
-    justify-content: flex-start; /* Center the container horizontally */
-    align-items: flex-start; /* Align items at the start (top) of the container */
+    justify-content: flex-start;
+    align-items: flex-start;
     padding: 20px;
 }
 
@@ -239,7 +244,6 @@ label {
 
 .fixed-image {
     position: absolute;
-    /*z-index: 999;*/
     width: 200px;
     height: auto;
 }

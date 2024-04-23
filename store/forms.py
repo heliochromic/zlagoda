@@ -191,6 +191,7 @@ class CheckProductDetailForm(forms.Form):
         with connection.cursor() as cursor:
             cursor.execute(query, [product_upc])
             store_quantity = cursor.fetchall()[0][0]
+            print(store_quantity)
 
         if 0 < quantity > int(store_quantity):
             raise forms.ValidationError(f"Only {store_quantity} units of this product are only available in stock")

@@ -1300,7 +1300,8 @@ class CheckProductDetailView(View):
     success_url = reverse_lazy('check-add')
 
     product_query = """
-    SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name FROM store_product AS sp
+    SELECT ssp."UPC", sp.product_name, ROUND(ssp.selling_price, 2), ssp.products_number, sc.category_name 
+    FROM store_product AS sp
     INNER JOIN public.store_store_product AS ssp ON sp.id_product = ssp.id_product_id 
     LEFT JOIN public.store_category AS sc ON sp.category_number_id = sc.category_number
     WHERE ssp."UPC" = %s;
@@ -1329,6 +1330,7 @@ class CheckProductDetailView(View):
 
         if form.is_valid():
             selected_upc = request.POST.get('product_upc')
+            print(selected_upc)
             selected_amount = request.POST.get('quantity')
 
             check_temporary_list = request.session.get('check_temporary_list', [])
@@ -1380,9 +1382,9 @@ class CheckDetailsView(View):
             WHEN sc.card_number_id IS NULL THEN 0
             ELSE COALESCE(scc.percent, 0)
         END) / 100, 2) AS discounted_price, scc.percent, 
-            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) 
+            sc.card_number_id, concat(se.empl_name, ' ', se.empl_surname) AS employee_name
         FROM store_check AS sc 
-        INNER JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+        LEFT JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
         LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
         WHERE sc.check_number = %s
         """
@@ -1405,7 +1407,8 @@ class CheckDetailsView(View):
             cursor.execute(all_products_query, [pk])
             all_products_in_check = cursor.fetchall()
             cursor.execute(query, [pk])
-            check_header = cursor.fetchall()
+            check_header = cursor.fetchall()[0]
+            print(check_header)
 
         return render(request, template_name=self.template_name, context={
             'all_products_in_check': all_products_in_check,

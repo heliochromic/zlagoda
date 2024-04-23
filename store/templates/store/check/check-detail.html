@@ -6,13 +6,42 @@
 {% endblock %}
 
 {% block css_files %}
-
+    <link rel="stylesheet" href="{% static 'store/forms.css' %}">
 {% endblock %}
 
 {% block content %}
     <section id="check-detail">
         <div class="check-header">
-            <p>{{ check_header }}</p>
+            <div>
+                <label>Check Number:</label>
+                {{ check_header.0 }}
+            </div>
+            <div>
+                <label>Print Date:</label>
+                {{ check_header.1 }}
+            </div>
+            <div>
+                <label>Price:</label>
+                {{ check_header.2 }}
+            </div>
+            {% if check_header.4 %}
+            <div>
+                <label>Price with prom:</label>
+                {{ check_header.3 }}
+            </div>
+            <div>
+                <label>Customer card:</label>
+                {{ check_header.4 }}
+            </div>
+            <div>
+                <label>Percentage of customer discount:</label>
+                {{ check_header.5 }}
+            </div>
+            {% endif %}
+            <div>
+                <label>Cashier Name:</label>
+                {{ check_header.6    }}
+            </div>
         </div>
         <table>
             <thead>
@@ -25,12 +54,12 @@
             </thead>
             <tbody>
             {% for product in all_products_in_check %}
-            <tr>
-                <td>{{ product.0 }}</td>
-                <td>{{ product.1 }}</td>
-                <td>{{ product.2 }}</td>
-                <td>{{ product.3 }}</td>
-            </tr>
+                <tr>
+                    <td>{{ product.0 }}</td>
+                    <td>{{ product.1 }}</td>
+                    <td>{{ product.2 }}</td>
+                    <td>{{ product.3 }}</td>
+                </tr>
             {% endfor %}
             </tbody>
         </table>

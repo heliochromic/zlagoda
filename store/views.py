@@ -1,4 +1,3 @@
-
 import decimal
 import json
 import random
@@ -23,6 +22,7 @@ from .forms import (ProductFilterForm, ProductDetailForm, EmployeeFilterForm, Em
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm, CheckProductDetailForm, \
     CheckDetailForm, CheckFilter, StatsDateOptions
+
 
 # Create your views here
 
@@ -1520,6 +1520,7 @@ def user_profile(request):
         employee['employee_zip_code'] = data[0][11]
         return render(request, "profile/profile.html", {"employee": employee})
 
+
 @method_decorator(login_required, name='dispatch')
 class StatisticsTab(View):
     def get(self, request):
@@ -1564,17 +1565,18 @@ class StatisticsTab(View):
 
             # Query for top 5 most productive cashiers
             cursor.execute("""
-                SELECT CONCAT(se.empl_name, ' ', se.empl_surname) AS cashier_name,
-                ROUND(SUM(sc.sum_total) * (100 -         
-                CASE             
-                    WHEN sc.card_number_id IS NULL THEN 0            
-                    ELSE COALESCE(scc.percent, 0)        
-                END) / 100, 2) AS discounted_price
-                FROM store_check AS sc 
-                LEFT JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
-                LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
-                GROUP BY se.empl_name, se.empl_surname
-                ORDER BY discounted_price DESC LIMIT 5;
+            SELECT CONCAT(se.empl_name, ' ', se.empl_surname) AS cashier_name,
+                   ROUND(SUM(sc.sum_total) * (100 - COALESCE(AVG(CASE
+                                                                       WHEN sc.card_number_id IS NULL THEN 0
+                                                                       ELSE scc.percent
+                                                                   END), 0)
+                                               ) / 100, 2) AS discounted_price
+            FROM store_check AS sc
+            LEFT JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+            LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+            GROUP BY se.empl_name, se.empl_surname
+            ORDER BY discounted_price DESC
+            LIMIT 5;
             """)
             most_productive_cashiers = cursor.fetchall()
             chart_2_labels = [row[0] for row in most_productive_cashiers]
@@ -1582,21 +1584,27 @@ class StatisticsTab(View):
 
             # Query for inactive customers within a specific date range
             cursor.execute("""
-                SELECT DISTINCT CONCAT(scc.cust_name, ' ', scc.cust_surname)
-                FROM store_customer_card scc
-                LEFT JOIN store_check sc ON scc.card_number = sc.card_number_id
+                SELECT DISTINCT CONCAT(scc.cust_name, ' ', scc.cust_surname) AS customer_name, (
+                    SELECT id_employee_id 
+                    FROM store_check sc2
+                    LEFT JOIN store_employee se ON se.id_employee = sc2.id_employee_id
+                    WHERE sc2.id_employee_id = sc.id_employee_id
+                    ORDER BY sc2.print_date DESC LIMIT 1
+                )
+                FROM store_check sc
+                RIGHT JOIN store_customer_card scc ON scc.card_number = sc.card_number_id
                 WHERE scc.card_number NOT IN (
-                        SELECT c.card_number_id
+                        SELECT DISTINCT c.card_number_id
                         FROM store_check c
                         WHERE c.print_date NOT IN (
                                 SELECT print_date
                                 FROM store_check
-                                WHERE print_date < %s
-                        )
+                                WHERE print_date < %s  
+                        ) AND c.card_number_id IS NOT NULL
                 );
             """, [not_active_customers_date])
             not_active_customers_within_date = cursor.fetchall()
-            list_2 = [row[0] for row in not_active_customers_within_date]
+            list_2 = [f"{row[0]} - {row[1]}" for row in not_active_customers_within_date]
 
         return render(request, 'store/statistics/statistics.html', {
             'form': form,
@@ -1607,6 +1615,8 @@ class StatisticsTab(View):
             'list_1': list_1,
             'list_2': list_2
         })
+
+
 @login_required
 def password_reset(request):
     success_url = reverse_lazy("user-profile")

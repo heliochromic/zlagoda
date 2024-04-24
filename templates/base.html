@@ -13,6 +13,9 @@
                 display: none !important;
             }
         }
+        .print-button:hover {
+        cursor: pointer;
+            }
     </style>
     {% block css_files %}{% endblock %}
     <script>
@@ -31,7 +34,7 @@
         <ul>
             {% if user.is_authenticated %}
                 {% if user.groups.first.name == "manager" %}
-                    <button class="print-btn" onclick="printPage()">Print</button>
+                    <li><a class="print-button" onclick="printPage()">Print</a></li>
                     <li><a href="{% url 'statistics' %}">Stats</a></li>
                     <li><a href="{% url 'employee-list' %}">Employee</a></li>
                 {% endif %}

@@ -1,10 +1,12 @@
 
 import decimal
+import json
 import random
 from datetime import date, datetime
 
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.models import Session
 from django.utils.decorators import method_decorator
 from django.db import connection, transaction, IntegrityError
 from django.contrib.auth.hashers import make_password
@@ -16,7 +18,7 @@ from django.urls import reverse_lazy
 from .forms import (ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
                     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm,
                     StoreProductFilterForm, \
-                    StoreProductDetailForm, StorePromotionalProductDetailForm)
+                    StoreProductDetailForm, StorePromotionalProductDetailForm, CustomPasswordChangeForm)
 
 from .forms import ProductFilterForm, ProductDetailForm, EmployeeFilterForm, EmployeeDetailForm, \
     ClientFilterForm, ClientDetailForm, CategoryDetailForm, UserLoginForm, UserRegisterForm, CheckProductDetailForm, \
@@ -1498,6 +1500,7 @@ def logout_view(request):
 
 def user_profile(request):
     with connection.cursor() as cursor:
+        print(request.user.id)
         cursor.execute("""SELECT e.* 
                        FROM auth_user a JOIN store_employee e ON a.id_employee = e.id_employee
                        WHERE a.id = %s """, [request.user.id])
@@ -1517,7 +1520,7 @@ def user_profile(request):
         employee['employee_zip_code'] = data[0][11]
         return render(request, "profile/profile.html", {"employee": employee})
 
-
+@method_decorator(login_required, name='dispatch')
 class StatisticsTab(View):
     def get(self, request):
         form = StatsDateOptions(request.GET)
@@ -1598,3 +1601,20 @@ class StatisticsTab(View):
             'list_1': list_1,
             'list_2': list_2
         })
+@login_required
+def password_reset(request):
+    success_url = reverse_lazy("user-profile")
+    if request.method == 'POST':
+        form = CustomPasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data.get('new_password1')
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE auth_user SET password = %s WHERE id = %s",
+                               [make_password(new_password), request.user.id])
+            user = authenticate(username=request.user.username, password=new_password)
+            if user is not None:
+                login(request, user)
+                return redirect(success_url)
+    else:
+        form = CustomPasswordChangeForm(request.user)
+    return render(request, 'registration/password-reset.html', {'form': form})

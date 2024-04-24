@@ -1561,11 +1561,17 @@ class StatisticsTab(View):
 
             # Query for top 5 most productive cashiers
             cursor.execute("""
-                SELECT CONCAT(e.empl_name, ' ', e.empl_surname) AS cashier_name, SUM(c.sum_total) AS total_sales
-                FROM store_employee e 
-                JOIN store_check c ON e.id_employee = c.id_employee_id
-                GROUP BY e.empl_name, e.empl_surname
-                ORDER BY total_sales DESC LIMIT 5;
+                SELECT CONCAT(se.empl_name, ' ', se.empl_surname) AS cashier_name,
+                ROUND(SUM(sc.sum_total) * (100 -         
+                CASE             
+                    WHEN sc.card_number_id IS NULL THEN 0            
+                    ELSE COALESCE(scc.percent, 0)        
+                END) / 100, 2) AS discounted_price
+                FROM store_check AS sc 
+                LEFT JOIN store_employee AS se ON sc.id_employee_id = se.id_employee
+                LEFT JOIN store_customer_card AS scc ON sc.card_number_id = scc.card_number
+                GROUP BY se.empl_name, se.empl_surname
+                ORDER BY discounted_price DESC LIMIT 5;
             """)
             most_productive_cashiers = cursor.fetchall()
             chart_2_labels = [row[0] for row in most_productive_cashiers]

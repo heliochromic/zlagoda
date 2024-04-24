@@ -1,6 +1,7 @@
 from datetime import date
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ValidationError
 from django.db import connection
 
@@ -297,6 +298,7 @@ class StatsDateOptions(forms.Form):
         required=False
     )
 
+
     # def clean(self):
     #     cleaned_data = super().clean()
     #     products_date = cleaned_data.get('products_date')
@@ -309,3 +311,31 @@ class StatsDateOptions(forms.Form):
     #         self.add_error('customers_date', "Invalid customers date. Please select a valid date.")
     #
     #     return cleaned_data
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    old_password = forms.CharField(
+        required=False,
+        label="Current Password",
+        widget=forms.PasswordInput,
+    )
+    new_password1 = forms.CharField(
+        required=False,
+        label="New Password",
+        widget=forms.PasswordInput,
+    )
+    new_password2 = forms.CharField(
+        required=False,
+        label="Confirm New Password",
+        widget=forms.PasswordInput,
+    )
+    def clean_old_password(self):
+        old_password = self.cleaned_data.get("old_password")
+        if old_password and not self.user.check_password(old_password):
+            raise forms.ValidationError("Incorrect current password")
+        return old_password
+    def clean_new_password2(self):
+        if (self.cleaned_data.get("new_password1") and self.cleaned_data.get("new_password2")
+                and self.cleaned_data.get("new_password1") != self.cleaned_data.get("new_password2")):
+            raise forms.ValidationError("Passwords do not match")
+        return self.cleaned_data.get("new_password1")
+

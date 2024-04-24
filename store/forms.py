@@ -89,8 +89,8 @@ class EmployeeDetailForm(forms.Form):
     employee_patronymic = forms.CharField(max_length=50, required=False,
                                           help_text="Enter patronymic")
     ROLE_CHOICES = (
-        ('manager', 'manager'),
-        ('cashier', 'cashier'),
+        ('Manager', 'Manager'),
+        ('Cashier', 'Cashier'),
     )
     employee_role = forms.ChoiceField(choices=ROLE_CHOICES, help_text="Enter employee role")
     employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")

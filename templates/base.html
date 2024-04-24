@@ -15,6 +15,11 @@
         }
     </style>
     {% block css_files %}{% endblock %}
+    <script>
+    function printPage() {
+        window.print();
+    }
+    </script>
 </head>
 <body>
 <img src="{% static 'store/images/image-hello-kitty-epic-rap-battles-cartoons-12.png' %}" alt="Left Image" class="fixed-image" id="kitty_1">
@@ -26,6 +31,7 @@
         <ul>
             {% if user.is_authenticated %}
                 {% if user.groups.first.name == "manager" %}
+                    <button class="print-btn" onclick="printPage()">Print</button>
                     <li><a href="{% url 'statistics' %}">Stats</a></li>
                     <li><a href="{% url 'employee-list' %}">Employee</a></li>
                 {% endif %}

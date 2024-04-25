@@ -12,12 +12,34 @@
             header nav {
                 display: none !important;
             }
+            .fixed-image {
+                position: relative;
+            }
+            
+            #kitty_1 {
+                display: none;
+            }
+            
+            #kitty_2 {
+                top: 0;
+                right: 0;
+            }
+        }
+
+        .print-button:hover {
+            cursor: pointer;
         }
     </style>
     {% block css_files %}{% endblock %}
+    <script>
+        function printPage() {
+            window.print();
+        }
+    </script>
 </head>
 <body>
-<img src="{% static 'store/images/image-hello-kitty-epic-rap-battles-cartoons-12.png' %}" alt="Left Image" class="fixed-image" id="kitty_1">
+<img src="{% static 'store/images/image-hello-kitty-epic-rap-battles-cartoons-12.png' %}" alt="Left Image"
+     class="fixed-image" id="kitty_1">
 <img src="{% static 'store/images/hello_kitty_with_bags.png' %}" alt="Left Image" class="fixed-image" id="kitty_2">
 
 <header id="navigation-bar">
@@ -26,6 +48,7 @@
         <ul>
             {% if user.is_authenticated %}
                 {% if user.groups.first.name == "manager" %}
+                    <li><a class="print-button" onclick="printPage()">Print</a></li>
                     <li><a href="{% url 'statistics' %}">Stats</a></li>
                     <li><a href="{% url 'employee-list' %}">Employee</a></li>
                 {% endif %}

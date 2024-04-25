@@ -40,6 +40,7 @@ urlpatterns = [
     path('accounts/register/', views.UserRegisterView.as_view(), name='user-register'),
     path('accounts/logout/', views.logout_view, name='logout'),
     path('accounts/profile/', views.user_profile, name='user-profile'),
+    path('accounts/password-reset/', views.password_reset, name='password-reset'),
 
     path('statistics/', views.StatisticsTab.as_view(), name='statistics')
 ]

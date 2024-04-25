@@ -67,5 +67,9 @@
         {% csrf_token %}
         <button type="submit" class="button delete-btn" id="log-out">Log out</button>
     </form>
+    <form action="{% url 'password-reset' %}" method="get" class="password-reset">
+        {% csrf_token %}
+        <button type="submit" class="button delete-btn" id="log-out">Reset password</button>
+    </form>
 
 {% endblock %}

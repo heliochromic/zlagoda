@@ -253,7 +253,23 @@ class ClientListView(View):
                         CONCAT(street, ', ', city, ' ', zip_code) as address, percent as discount
                         FROM store_customer_card
                     '''
-
+        gold_cashiers_query = '''
+                           SELECT card_number, CONCAT(cust_surname, ' ',cust_name) AS full_name, phone_number, 
+                           CONCAT(street, ', ', city, ' ', zip_code) as address, percent as discount
+                           FROM store_customer_card
+                           WHERE card_number IN (SELECT card_number_id 
+                                                     FROM store_check AS ch
+                                                     WHERE NOT EXISTS(SELECT * 
+                                                                      FROM store_sale
+                                                                      WHERE ch.check_number = check_number_id 
+                                                                      AND "UPC_id" NOT IN (
+                                                                                      SELECT "UPC"
+                                                                                      FROM store_store_product
+                                                                                      WHERE promotional_product IS False
+                                                                                          )
+                                                                      )
+                                            )
+                '''
         if form.is_valid():
             cust_name = form.cleaned_data.get('client_name')
             discount = form.cleaned_data.get('client_discount')
@@ -275,17 +291,52 @@ class ClientListView(View):
                 query += 'ORDER BY 2'
                 cursor.execute(query, query_params)
                 clients = cursor.fetchall()
+                if 'goldenClients' in request.GET:
+                    cursor.execute(gold_cashiers_query)
+                    gold_clients = cursor.fetchall()
+                else:
+                    gold_clients = None
 
         else:
             with connection.cursor() as cursor:
                 query += 'ORDER BY 2'
                 cursor.execute(query)
                 clients = cursor.fetchall()
+                if 'goldenClients' in request.GET:
+                    cursor.execute(gold_cashiers_query)
+                    gold_clients = cursor.fetchall()
+                else:
+                    gold_clients = None
 
         return render(request, template_name=self.template_name, context={
             'form': form,
-            'clients': clients
+            'clients': clients,
+            'gold_clients': gold_clients
         })
+
+    # def post(self, request):
+    #     print('fnuufrjivrfivmivrjmirv')
+    #     gold_cashiers_query = '''
+    #                SELECT card_number, CONCAT(cust_surname, ' ',cust_name) AS full_name, phone_number,
+    #                CONCAT(street, ', ', city, ' ', zip_code) as address, percent as discount
+    #                FROM store_customer_card
+    #                WHERE card_number NOT IN (SELECT card_number_id
+    #                                          FROM store_check AS ch
+    #                                          WHERE NOT EXISTS(SELECT *
+    #                                                           FROM store_sale
+    #                                                           WHERE ch.check_number = check_number_id AND "UPC_id" IN(
+    #                                                           SELECT "UPC"
+    #                                                           FROM store_store_product
+    #                                                           WHERE promotional_product IS True
+    #                                                           )))
+    #     '''
+    #     with connection.cursor() as cursor:
+    #         cursor.execute(query)
+    #         golden_customers = cursor.fetchall()
+    #
+    #     return render(request, self.template_name, context={
+    #         'gold_cashiers': golden_customers
+    #     })
 
 
 @method_decorator(login_required, name='dispatch')

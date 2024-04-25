@@ -29,9 +29,9 @@
                 {{ product.3 }}
             </div>
         </div>
-        <form method="POST" action="{% url 'check-product-detail' upc=product.0.0 %}">
+        <form method="POST" action="{% url 'check-product-detail' upc=product.0 %}">
             {% csrf_token %}
-            <input type="hidden" name="product_upc" value="{{ product.0.0 }}"/>
+            <input type="hidden" name="product_upc" value="{{ product.0 }}"/>
 
             <label for="quantity">Quantity</label>
             {{ form.quantity }}

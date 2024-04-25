@@ -1320,7 +1320,8 @@ class CheckProductDetailView(View):
 
         with connection.cursor() as cursor:
             cursor.execute(self.product_query, [upc])
-            product = cursor.fetchall()
+            product = cursor.fetchall()[0]
+            print(product)
 
         return render(request, template_name=self.template_name, context={
             'form': form,
@@ -1332,7 +1333,6 @@ class CheckProductDetailView(View):
 
         if form.is_valid():
             selected_upc = request.POST.get('product_upc')
-            print(selected_upc)
             selected_amount = request.POST.get('quantity')
 
             check_temporary_list = request.session.get('check_temporary_list', [])
@@ -1365,7 +1365,7 @@ class CheckProductDetailView(View):
         else:
             with connection.cursor() as cursor:
                 cursor.execute(self.product_query, [upc])
-                product = cursor.fetchall()
+                product = cursor.fetchall()[0]
 
             return render(request, template_name=self.template_name, context={
                 'form': form,

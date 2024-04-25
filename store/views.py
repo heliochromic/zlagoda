@@ -1266,7 +1266,7 @@ class CheckCreateView(View):
 
                         check_count += 1
 
-                        check_number = f'CHK{check_count + 1:05d}'
+                        check_number = f'CHK{check_count:05d}'
 
                         check_insert_query = """
                         INSERT INTO store_check(check_number, print_date, sum_total, vat, card_number_id, id_employee_id) 

@@ -1261,8 +1261,10 @@ class CheckCreateView(View):
                         cursor.execute(employee_id_query, [current_cashier])
                         current_employee_id = cursor.fetchall()[0][0]
 
-                        cursor.execute("SELECT COUNT(*) FROM store_check")
-                        check_count = cursor.fetchone()[0]
+                        cursor.execute("SELECT check_number FROM store_check ORDER BY print_date DESC LIMIT 1")
+                        check_count = int(cursor.fetchone()[0][3:])
+
+                        check_count += 1
 
                         check_number = f'CHK{check_count + 1:05d}'
 

@@ -53,9 +53,11 @@
 
         <button type="submit" class="button edit-btn">Edit</button>
     </form>
+ {% if user.groups.first.name == "manager" %}
     <form method="POST" action="{% url 'client-detail' pk=pk %}">
         {% csrf_token %}
         <input type="hidden" name="action" value="delete">
         <button type="submit" class="button delete-btn">Delete</button>
     </form>
+ {% endif %}
 {% endblock %}

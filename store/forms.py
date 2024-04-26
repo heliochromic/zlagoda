@@ -298,6 +298,8 @@ class StatsDateOptions(forms.Form):
         required=False
     )
 
+    category_name = forms.ModelChoiceField(queryset=Category.objects.all(),
+                                           required=False)
 
     # def clean(self):
     #     cleaned_data = super().clean()

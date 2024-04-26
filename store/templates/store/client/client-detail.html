@@ -42,6 +42,11 @@
 
     <label for="customer_discount_percent">Discount Percent:</label>
     {{ form.customer_discount_percent }}
+        {% if form.errors.customer_discount_percent %}
+            {% for error in form.customer_discount_percent.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+        {% endif %}
         {% if request.GET.submit == 'No' %}
         <p>Can't delete client until you delete every check connected</p>
         {% endif %}

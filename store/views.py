@@ -172,6 +172,7 @@ class EmployeeDetailView(View):
         return render(request, template_name=self.template_name, context={
             'form': form,
             'pk': pk,
+            'role' : employee_role
         })
 
     def post(self, request, pk):
@@ -193,7 +194,10 @@ class EmployeeDetailView(View):
             return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
     def update_employee(self, request, pk):
-        form = EmployeeDetailForm(request.POST, initial={'pk': pk})
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT empl_role FROM store_employee WHERE id_employee =%s", [pk])
+            role = cursor.fetchone()[0]
+        form = EmployeeDetailForm(request.POST, initial={'pk': pk, 'role': role})
         if form.is_valid():
             params = []
             selected_id = pk
@@ -204,7 +208,7 @@ class EmployeeDetailView(View):
             params.append(selected_name)
             selected_patronymic = form.cleaned_data.get('employee_patronymic')
             params.append(selected_patronymic)
-            selected_role = form.cleaned_data.get('employee_role')
+            selected_role = role
             params.append(selected_role)
             selected_salary = form.cleaned_data.get('employee_salary')
             params.append(selected_salary)
@@ -225,7 +229,7 @@ class EmployeeDetailView(View):
             update = '''
                 UPDATE store_employee
                 SET id_employee = %s, empl_surname = %s, empl_name = %s,
-                    empl_patronymic = %s, empl_role = %s, salary = %s,
+                    empl_patronymic = %s,empl_role = %s, salary = %s,
                     date_of_birth = %s, date_of_start = %s, phone_number = %s,
                     city = %s, street = %s, zip_code = %s
                 WHERE id_employee = %s
@@ -239,7 +243,8 @@ class EmployeeDetailView(View):
         else:
             return render(request, template_name=self.template_name, context={
                 'form': form,
-                'pk': pk
+                'pk': pk,
+                'role': role
             })
 
 
@@ -1502,7 +1507,6 @@ def logout_view(request):
 
 def user_profile(request):
     with connection.cursor() as cursor:
-        print(request.user.id)
         cursor.execute("""SELECT e.* 
                        FROM auth_user a JOIN store_employee e ON a.id_employee = e.id_employee
                        WHERE a.id = %s """, [request.user.id])

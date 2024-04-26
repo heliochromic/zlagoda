@@ -31,7 +31,11 @@
 
         <label for="employee_salary">Salary:</label>
         {{ form.employee_salary }}
-
+        {% if form.errors.employee_salary %}
+            {% for error in form.employee_salary.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+        {% endif %}
         <label for="employee_date_of_birth">Date of Birth:</label>
         {{ form.employee_date_of_birth }}
 

@@ -45,6 +45,11 @@
 
     <label for="customer_discount_percent">Discount Percent:</label>
     {{ form.customer_discount_percent }}
+     {% if form.errors.customer_discount_percent %}
+            {% for error in form.customer_discount_percent.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+        {% endif %}
 
     <button type="submit" class="button">Add</button>
 </form>

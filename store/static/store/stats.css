@@ -10,10 +10,14 @@
 }
 
 .lists-container form .button,
-.lists-container form input[type='date'] {
+.lists-container form input[type='date']{
     width: 100%;
     padding: 10px;
     box-sizing: border-box;
     margin: 10px auto;
 
+}
+#id_category_name{
+    width: 100%;
+    margin: 10px auto;
 }

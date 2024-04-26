@@ -5,8 +5,6 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import connection
-
-from .models import Category, Employee, Product, Store_Product
 from .models import Category, Employee, Product, Customer_Card
 
 

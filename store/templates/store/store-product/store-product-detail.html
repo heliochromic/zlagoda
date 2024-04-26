@@ -52,7 +52,9 @@
                 <p>{{ error }}</p>
             {% endfor %}
             {% endif %}
-
+        {% if request.GET.submit == 'No' %}
+        <p>Can't delete store product until you delete every sale connected</p>
+        {% endif %}
         <button type="submit" class="button edit-btn">Edit</button>
 
     </form>

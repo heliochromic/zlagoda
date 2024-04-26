@@ -39,9 +39,20 @@
         {% if not promotional_product %}
             <label for="selling_price">Selling price:</label>
             {{ form.selling_price }}
+             {% if form.errors.selling_price %}
+            {% for error in form.selling_price.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+            {% endif %}
         {% endif %}
         <label for="products_number">Products Number:</label>
         {{ form.products_number }}
+        {% if form.errors.products_number %}
+            {% for error in form.products_number.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+            {% endif %}
+
         <button type="submit" class="button edit-btn">Edit</button>
 
     </form>

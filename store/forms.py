@@ -35,33 +35,15 @@ class StoreProductFilterForm(forms.Form):
 class StoreProductDetailForm(forms.Form):
     product_upc = forms.CharField(label='Product UPC', max_length=12,
                                   widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}))
-    selling_price = forms.DecimalField(label='Selling price', max_digits=13, decimal_places=4)
+    selling_price = forms.DecimalField(label='Selling price', max_digits=13, decimal_places=4, validators=[MinValueValidator(0)])
 
-    def clean_selling_price(self):
-        selling_price = self.cleaned_data['selling_price']
-        if selling_price <= 0:
-            raise forms.ValidationError("Selling price cannot be negative.")
-        return selling_price
-
-    products_number = forms.DecimalField(label='Product number')
-
-    def clean_products_number(self):
-        products_number = self.cleaned_data['products_number']
-        if products_number < 0:
-            raise forms.ValidationError("Product number cannot be negative.")
-        return products_number
+    products_number = forms.DecimalField(label='Product number', validators=[MinValueValidator(0)])
 
     id_product_id = forms.ModelChoiceField(queryset=Product.objects.all(), label='id product')
 
 
 class StorePromotionalProductDetailForm(forms.Form):
-    products_number = forms.DecimalField(label='Product number')
-
-    def clean_products_number(self):
-        products_number = self.cleaned_data['products_number']
-        if products_number < 0:
-            raise forms.ValidationError("Product number cannot be negative.")
-        return products_number
+    products_number = forms.DecimalField(label='Product number', validators=[MinValueValidator(0)])
 
 
 class EmployeeFilterForm(forms.Form):
@@ -310,12 +292,8 @@ class StatsDateOptions(forms.Form):
         required=False
     )
 
-<<<<<<< HEAD
-=======
     category_name = forms.ModelChoiceField(queryset=Category.objects.all(),
                                            required=False)
-
->>>>>>> ce74d77 (queries for report done)
     # def clean(self):
     #     cleaned_data = super().clean()
     #     products_date = cleaned_data.get('products_date')

@@ -100,7 +100,7 @@ class EmployeeCreateView(View):
             params.append(selected_name)
             selected_patronymic = form.cleaned_data.get('employee_patronymic')
             params.append(selected_patronymic)
-            selected_role = form.cleaned_data.get('employee_role')
+            selected_role = 'Cashier' if 'CASH' in selected_id else 'Manager'
             params.append(selected_role)
             selected_salary = form.cleaned_data.get('employee_salary')
             params.append(selected_salary)
@@ -183,14 +183,23 @@ class EmployeeDetailView(View):
 
     def delete_employee(self, request, pk):
         try:
+
+            delete_employee_group = 'DELETE FROM auth_user_groups WHERE user_id = %s'
+            delete_employee = 'DELETE FROM auth_user WHERE id_employee = %s'
             delete = 'DELETE FROM store_employee WHERE id_employee = %s'
 
             with connection.cursor() as cursor:
-                cursor.execute(delete, [pk])
+                with transaction.atomic():
+                    cursor.execute('SELECT id FROM auth_user WHERE id_employee=%s', [pk])
+                    user_id = cursor.fetchone()[0]
+                    cursor.execute(delete_employee_group, [user_id])
+                    cursor.execute(delete_employee, [pk])
+                    cursor.execute(delete, [pk])
 
             messages.success(request, 'Employee deleted successfully')
             return redirect(self.success_url)
-        except IntegrityError:
+        except IntegrityError as e:
+            print(e)
             return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
     def update_employee(self, request, pk):

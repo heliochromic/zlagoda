@@ -310,6 +310,12 @@ class StatsDateOptions(forms.Form):
         required=False
     )
 
+<<<<<<< HEAD
+=======
+    category_name = forms.ModelChoiceField(queryset=Category.objects.all(),
+                                           required=False)
+
+>>>>>>> ce74d77 (queries for report done)
     # def clean(self):
     #     cleaned_data = super().clean()
     #     products_date = cleaned_data.get('products_date')

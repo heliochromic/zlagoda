@@ -11,9 +11,6 @@
 
 {% block content %}
 
-    {% if promotional_product %}
-        <p>Selling price: {{ selling_price }}</p>
-    {% endif %}
     <form method="POST" action="{% url 'store-product-details' pk=pk %}">
         {% csrf_token %}
         <div>
@@ -37,11 +34,30 @@
             {{ form.id_product_id }}
         </p>
         {% if not promotional_product %}
-            <label for="selling_price">Selling price:</label>
+            <div>
+                <label for="selling_price">Selling price:</label>
+            </div>
             {{ form.selling_price }}
+            {% if form.errors.selling_price %}
+                {% for error in form.selling_price.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        {% else %}
+            <div>
+                <label for="selling_price">Selling price:</label>{{ selling_price }}
+            </div>
         {% endif %}
         <label for="products_number">Products Number:</label>
         {{ form.products_number }}
+        {% if form.errors.products_number %}
+            {% for error in form.products_number.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+            {% endif %}
+        {% if request.GET.submit == 'No' %}
+        <p>Can't delete store product until you delete every sale connected</p>
+        {% endif %}
         <button type="submit" class="button edit-btn">Edit</button>
 
     </form>

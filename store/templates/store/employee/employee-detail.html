@@ -24,10 +24,15 @@
         {{ form.employee_patronymic }}
 
         <label for="employee_role">Employee Role:</label>
-        {{ form.employee_role }}
+        {{ role }}
 
         <label for="employee_salary">Employee Salary:</label>
         {{ form.employee_salary }}
+         {% if form.errors.employee_salary %}
+            {% for error in form.employee_salary.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+        {% endif %}
 
         <label for="employee_date_of_birth">Employee Date of Birth:</label>
         {{ form.employee_date_of_birth }}

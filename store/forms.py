@@ -3,9 +3,8 @@ from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import connection
-
-from .models import Category, Employee, Product, Store_Product
 from .models import Category, Employee, Product, Customer_Card
 
 
@@ -34,33 +33,15 @@ class StoreProductFilterForm(forms.Form):
 class StoreProductDetailForm(forms.Form):
     product_upc = forms.CharField(label='Product UPC', max_length=12,
                                   widget=forms.TextInput(attrs={'placeholder': "Enter store product's UPC"}))
-    selling_price = forms.DecimalField(label='Selling price', max_digits=13, decimal_places=4)
+    selling_price = forms.DecimalField(label='Selling price', max_digits=13, decimal_places=4, validators=[MinValueValidator(0)])
 
-    def clean_selling_price(self):
-        selling_price = self.cleaned_data['selling_price']
-        if selling_price <= 0:
-            raise forms.ValidationError("Selling price cannot be negative.")
-        return selling_price
-
-    products_number = forms.DecimalField(label='Product number')
-
-    def clean_products_number(self):
-        products_number = self.cleaned_data['products_number']
-        if products_number < 0:
-            raise forms.ValidationError("Product number cannot be negative.")
-        return products_number
+    products_number = forms.DecimalField(label='Product number', validators=[MinValueValidator(0)])
 
     id_product_id = forms.ModelChoiceField(queryset=Product.objects.all(), label='id product')
 
 
 class StorePromotionalProductDetailForm(forms.Form):
-    products_number = forms.DecimalField(label='Product number')
-
-    def clean_products_number(self):
-        products_number = self.cleaned_data['products_number']
-        if products_number < 0:
-            raise forms.ValidationError("Product number cannot be negative.")
-        return products_number
+    products_number = forms.DecimalField(label='Product number', validators=[MinValueValidator(0)])
 
 
 class EmployeeFilterForm(forms.Form):
@@ -83,8 +64,10 @@ class EmployeeDetailForm(forms.Form):
         if "CASH" not in id_employee and "MGR" not in id_employee:
             raise forms.ValidationError("Employee ID has to start with CASH or MGR.")
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM store_employee WHERE id_employee = %s", [id_employee])
+            cursor.execute("SELECT * FROM store_employee WHERE id_employee = %s", [self.cleaned_data['id_employee']])
             data = cursor.fetchall()
+            if (len(data) > 0):
+                raise forms.ValidationError("Employee ID already exists.")
         return id_employee
 
     employee_patronymic = forms.CharField(max_length=50, required=False,
@@ -93,8 +76,16 @@ class EmployeeDetailForm(forms.Form):
         ('Manager', 'Manager'),
         ('Cashier', 'Cashier'),
     )
-    employee_role = forms.ChoiceField(choices=ROLE_CHOICES, help_text="Enter employee role")
-    employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary")
+    employee_role = forms.ChoiceField(choices=ROLE_CHOICES, help_text="Enter employee role", required=False)
+    employee_salary = forms.DecimalField(max_digits=14, decimal_places=4, help_text="Enter employee salary",
+                                         validators=[MinValueValidator(0)])
+
+    def clean_salary(self):
+        employee_salary = self.cleaned_data['salary']
+        if employee_salary <= 0:
+            raise ValidationError("Employee salary should be higher than 0")
+        return employee_salary
+
     employee_date_of_birth = forms.DateField(help_text="Enter employee date of birth",
                                              widget=forms.DateInput(attrs={'type': 'date'})
                                              )
@@ -157,7 +148,8 @@ class ClientDetailForm(forms.Form):
     customer_city = forms.CharField(max_length=50, help_text="Enter employee city", required=False)
     customer_street = forms.CharField(max_length=50, help_text="Enter employee street", required=False)
     customer_zip_code = forms.CharField(max_length=9, help_text="Enter employee zip code", required=False)
-    customer_discount_percent = forms.IntegerField(help_text="Enter percent of discount", required=False)
+    customer_discount_percent = forms.IntegerField(help_text="Enter percent of discount", required=False,
+                                                   validators=[MinValueValidator(0)])
 
 
 class CategoryDetailForm(forms.Form):
@@ -297,7 +289,6 @@ class StatsDateOptions(forms.Form):
         widget=forms.DateInput(attrs={'type': 'date'}),
         required=False
     )
-
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     old_password = forms.CharField(

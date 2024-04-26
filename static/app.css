@@ -197,15 +197,31 @@ tbody tr:hover {
 
 .charts-container {
     width: 600px;
-    height: 800px;
+    height: auto;
     text-align: center;
 }
 
 #statistics {
     display: flex;
+    flex-direction: column;
     justify-content: flex-start;
     align-items: flex-start;
     padding: 20px;
+}
+
+.table-container{
+    max-width: 1200px;
+    width: 100%;
+    align-items: center;
+    align-content: center;
+}
+.label-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 20px;
 }
 
 .container {

@@ -32,7 +32,7 @@
                         <button type="submit" class="button">Update Lists</button>
                     </div>
                     <div class="form-group">
-                        <label for="products_date">List of products that have not been purchased during ...</label>
+                        <label for="products_date">List of products that have not been purchased since</label>
                         <input type="date" id="products_date" name="products_date" class="form-control"
                                value="{{ form.products_date.value }}">
                         <div>
@@ -57,8 +57,53 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group">
+                            <label for="category_name" id="id_category_name">List of the most popular products with category </label>
+                                    {{ form.category_name }}
+                            <div>
+                                <div>
+                                    <ul>
+                                        {% for item in list_3 %}
+                                            <li>{{ item }}</li>
+                                        {% empty %}
+                                            <li>No products have been purchased</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                    </div>
                 </form>
             </div>
+        </div>
+        <div class="table-container">
+            <label for="clientList" class="label-container">List of customers who have never bought goods at a discount</label>
+           <table id="clientList">
+                <thead>
+                <tr><th colspan ="5" style="text-align: center;">Gold Clients</th></tr>
+                <tr>
+                    <th>Card ID</th>
+                    <th>Client Name</th>
+                    <th>Phone Number</th>
+                    <th>Address</th>
+                    <th>Discount</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for client in gold_clients %}
+                    <tr style="cursor:pointer;" onclick="window.location='{% url 'client-detail' pk=client.0 %}'">
+                        <td>{{ client.0 }}</td>
+                        <td>{{ client.1 }}</td>
+                        <td>{{ client.2 }}</td>
+                        <td>{{ client.3 }}</td>
+                        <td>{{ client.4 }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">No clients found</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table> 
         </div>
     </section>
 

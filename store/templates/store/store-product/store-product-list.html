@@ -53,7 +53,9 @@
                 <th>Selling Price</th>
                 <th>Number of Products</th>
                 <th>On Sales</th>
+                {% if user.groups.first.name == "manager" %}
                 <th>Update Sale</th>
+                {% endif %}
             </tr>
             </thead>
             <tbody>
@@ -66,6 +68,7 @@
                     <td>{{ product.3 }}</td>
                     <td>{{ product.4 }}</td>
                     <td>{{ product.5 }}</td>
+                    {% if user.groups.first.name == "manager" %}
                     <td>
                         <form method="POST" action="{% url 'store-product-list' %}">
                             {% csrf_token %}
@@ -81,6 +84,7 @@
                             {% endif %}
                         </form>
                     </td>
+                    {% endif %}
                 </tr>
             {% empty %}
                 <tr>

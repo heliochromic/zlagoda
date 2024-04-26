@@ -26,13 +26,11 @@
 
             <button type="submit" class="button filter-btn">Filter</button>
         </form>
-        {% if user.groups.first.name == "manager" %}
         <a href="{% url 'client-add' %}">
             <div class="button">
                 Add Client
             </div>
         </a>
-        {% endif %}
         <table>
             <thead>
             <tr>

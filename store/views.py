@@ -924,9 +924,11 @@ class StoreProductCreateView(View):
                         INSERT INTO store_store_product ("UPC", selling_price, products_number, promotional_product, 
                                                         "UPC_prom_id", id_product_id) VALUES (%s, %s, %s, %s, %s, %s);
                               """
-
-                with connection.cursor() as cursor:
-                    cursor.execute(insert, query_params)
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(insert, query_params)
+                except IntegrityError:
+                    return HttpResponseRedirect('{}?submit=No'.format(request.path))
 
             messages.success(request, 'Store Product added successfully')
             return redirect(self.success_url)

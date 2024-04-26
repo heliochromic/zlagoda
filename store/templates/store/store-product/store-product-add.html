@@ -33,6 +33,9 @@
             <p>{{ error }}</p>
         {% endfor %}
         {% endif %}
+        {% if request.GET.submit == 'No' %}
+        <p>Can't add product with already existing UPC</p>
+        {% endif %}
         <button type="submit" class="button">Add</button>
     </form>
 {% endblock %}

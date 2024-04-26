@@ -1089,7 +1089,6 @@ class StoreProductUpdateView(View):
                 'upc_prod': pk,
                 'prod_name': prod_name,
                 'prod_characteristics': prod_characteristics,
-                # 'promotional_product': selected_product[0][3]
             })
 
     def update_promotional_store_product(self, request, pk):
@@ -1190,9 +1189,11 @@ class CheckListView(View):
                 cursor.execute(query, query_params)
                 checks = cursor.fetchall()
 
+            checks_sum = sum([check[2] for check in checks])
             return render(request, template_name=self.template_name, context={
                 'form': CheckFilter(),
-                'checks': checks
+                'checks': checks,
+                'checks_sum': checks_sum
             })
 
         query += " ORDER BY sc.print_date DESC;"
@@ -1201,9 +1202,11 @@ class CheckListView(View):
             cursor.execute(query, query_params)
             checks = cursor.fetchall()
 
+        checks_sum = sum([check[2] for check in checks])
         return render(request, template_name=self.template_name, context={
             'form': form,
-            'checks': checks
+            'checks': checks,
+            'checks_sum': checks_sum
         })
 
 
@@ -1378,6 +1381,7 @@ class CheckProductDetailView(View):
 @method_decorator(login_required, name='dispatch')
 class CheckDetailsView(View):
     template_name = 'store/check/check-detail.html'
+    success_url = reverse_lazy('check-list')
 
     def get(self, request, pk):
         query = """
@@ -1418,6 +1422,16 @@ class CheckDetailsView(View):
             'all_products_in_check': all_products_in_check,
             'check_header': check_header
         })
+
+    def post(self, request, pk):
+        delete_check_query = """
+        DELETE FROM store_check WHERE check_number = %s;
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(delete_check_query, [pk])
+
+        return redirect(self.success_url)
 
 
 class UserLoginView(View):

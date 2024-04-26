@@ -299,19 +299,6 @@ class StatsDateOptions(forms.Form):
     )
 
 
-    # def clean(self):
-    #     cleaned_data = super().clean()
-    #     products_date = cleaned_data.get('products_date')
-    #     customers_date = cleaned_data.get('customers_date')
-    #
-    #     if products_date is None or products_date > date.today():
-    #         self.add_error('products_date', "Invalid products date. Please select a valid date.")
-    #
-    #     if customers_date is None or customers_date > date.today():
-    #         self.add_error('customers_date', "Invalid customers date. Please select a valid date.")
-    #
-    #     return cleaned_data
-
 class CustomPasswordChangeForm(PasswordChangeForm):
     old_password = forms.CharField(
         required=False,
@@ -328,14 +315,15 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         label="Confirm New Password",
         widget=forms.PasswordInput,
     )
+
     def clean_old_password(self):
         old_password = self.cleaned_data.get("old_password")
         if old_password and not self.user.check_password(old_password):
             raise forms.ValidationError("Incorrect current password")
         return old_password
+
     def clean_new_password2(self):
         if (self.cleaned_data.get("new_password1") and self.cleaned_data.get("new_password2")
                 and self.cleaned_data.get("new_password1") != self.cleaned_data.get("new_password2")):
             raise forms.ValidationError("Passwords do not match")
         return self.cleaned_data.get("new_password1")
-

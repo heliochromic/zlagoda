@@ -25,22 +25,22 @@
                 {{ check_header.2 }}
             </div>
             {% if check_header.4 %}
-            <div>
-                <label>Price with prom:</label>
-                {{ check_header.3 }}
-            </div>
-            <div>
-                <label>Customer card:</label>
-                {{ check_header.4 }}
-            </div>
-            <div>
-                <label>Percentage of customer discount:</label>
-                {{ check_header.5 }}
-            </div>
+                <div>
+                    <label>Price with prom:</label>
+                    {{ check_header.3 }}
+                </div>
+                <div>
+                    <label>Customer card:</label>
+                    {{ check_header.4 }}
+                </div>
+                <div>
+                    <label>Percentage of customer discount:</label>
+                    {{ check_header.5 }}
+                </div>
             {% endif %}
             <div>
                 <label>Cashier Name:</label>
-                {{ check_header.6    }}
+                {{ check_header.6 }}
             </div>
         </div>
         <table>
@@ -63,5 +63,11 @@
             {% endfor %}
             </tbody>
         </table>
+        {% if user.groups.first.name == "manager" %}
+            <form action="{% url 'check-details' pk=check_header.0 %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="button delete-btn">Delete</button>
+            </form>
+        {% endif %}
     </section>
 {% endblock %}

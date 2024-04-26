@@ -12,6 +12,9 @@
                 display: none !important;
             }
         }
+        #all-checks > table {
+            margin-top: 10px;
+        }
     </style>
 {% endblock %}
 
@@ -35,6 +38,7 @@
                 </div>
             </a>
         {% endif %}
+        <label>Total sum for current configuration: {{ checks_sum }}</label>
         <table>
             <thead>
             <tr>

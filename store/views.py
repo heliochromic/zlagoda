@@ -269,7 +269,6 @@ class ClientListView(View):
                         CONCAT(street, ', ', city, ' ', zip_code) as address, percent as discount
                         FROM store_customer_card
                     '''
-
         if form.is_valid():
             cust_name = form.cleaned_data.get('client_name')
             discount = form.cleaned_data.get('client_discount')
@@ -300,7 +299,8 @@ class ClientListView(View):
 
         return render(request, template_name=self.template_name, context={
             'form': form,
-            'clients': clients
+            'clients': clients,
+
         })
 
 
@@ -1540,10 +1540,14 @@ def user_profile(request):
 class StatisticsTab(View):
     def get(self, request):
         form = StatsDateOptions(request.GET)
+        if form.is_valid():
+            print("VALIDDDDDD")
+        else:
+            print(form.errors)
 
         not_purchased_products_date = form.cleaned_data.get('products_date') if form.is_valid() else None
         not_active_customers_date = form.cleaned_data.get('customers_date') if form.is_valid() else None
-
+        selected_category = form.cleaned_data.get('category_name') if form.is_valid() else None
         not_purchased_products_date = not_purchased_products_date or date(1900, 1, 1)
         not_active_customers_date = not_active_customers_date or date(1900, 1, 1)
 
@@ -1621,6 +1625,45 @@ class StatisticsTab(View):
             not_active_customers_within_date = cursor.fetchall()
             list_2 = [f"{row[0]} - {row[1]}" for row in not_active_customers_within_date]
 
+            # query to find all clients which never bought products at a discount
+            cursor.execute('''
+                        SELECT card_number, CONCAT(cust_surname, ' ',cust_name) AS full_name, phone_number, 
+                           CONCAT(street, ', ', city, ' ', zip_code) as address, percent as discount
+                           FROM store_customer_card
+                           WHERE card_number NOT IN (SELECT card_number_id 
+                                                     FROM store_check AS ch
+                                                     WHERE check_number IN (SELECT check_number_id 
+                                                                      FROM store_sale
+                                                                      WHERE "UPC_id" NOT IN (
+                                                                                      SELECT "UPC"
+                                                                                      FROM store_store_product
+                                                                                      WHERE promotional_product IS False
+                                                                                          )
+                                                                      ) AND card_number_id IS NOT NULL
+                                            ) AND card_number IN (SELECT card_number_id FROM store_check)
+     
+                ''')
+            gold_clients = cursor.fetchall()
+            cursor.execute('''SELECT * FROM store_category''')
+            if selected_category is None:
+                list_3 = None
+            else:
+                selected_category = selected_category.category_name
+                print(selected_category)
+                cursor.execute('''
+                      SELECT sp.product_name, COUNT(*) as number_purchases
+                      FROM store_product AS sp 
+                      INNER JOIN store_category AS sc ON sp.category_number_id = sc.category_number
+                      INNER JOIN store_store_product AS ssp ON sp.id_product = ssp.id_product_id
+                      INNER JOIN store_sale AS ss ON ssp."UPC" = ss."UPC_id"
+                      WHERE sc.category_name = %s
+                      GROUP BY sp.product_name
+                      ORDER BY number_purchases DESC LIMIT 5
+                ''', [selected_category])
+                top_product = cursor.fetchall()
+                list_3 = [f"{row[0]} - {row[1]} purchases" for row in top_product]
+                print(list_3)
+
         return render(request, 'store/statistics/statistics.html', {
             'form': form,
             'chart_1_labels': chart_1_labels,
@@ -1628,7 +1671,9 @@ class StatisticsTab(View):
             'chart_2_labels': chart_2_labels,
             'chart_2_values': chart_2_values,
             'list_1': list_1,
-            'list_2': list_2
+            'list_2': list_2,
+            'list_3': list_3,
+            'gold_clients': gold_clients
         })
 
 

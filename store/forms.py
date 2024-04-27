@@ -18,6 +18,8 @@ class ProductDetailForm(forms.Form):
     product_name = forms.CharField(label='Product Name', max_length=100)
     characteristics = forms.CharField(label='Characteristics', widget=forms.Textarea)
     category = forms.ModelChoiceField(queryset=Category.objects.all(), label='Category', empty_label='All Categories')
+    start_date = forms.DateField(label="Start Date", widget=forms.DateInput(attrs={'type': 'date'}), required=False)
+    end_date = forms.DateField(label="Start Date", widget=forms.DateInput(attrs={'type': 'date'}), required=False)
 
 
 class StoreProductFilterForm(forms.Form):

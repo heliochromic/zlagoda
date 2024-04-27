@@ -7,6 +7,13 @@
 
 {% block css_files %}
     <link rel="stylesheet" href="{% static 'store/forms.css' %}">
+    <style>
+        .center-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -30,4 +37,26 @@
         <input type="hidden" name="action" value="delete">
         <button type="submit" class="button delete-btn">Delete</button>
     </form>
+ <form method="post" action="{% url 'product-detail' pk=pk %}">
+    {% csrf_token %}
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date" name="start_date">
+
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date" name="end_date">
+
+    <input type="hidden" name="action" value="Get Count">
+        <button type="submit" class="button get-count-btn">Get Count</button>
+        {% if sales_count is not None %}
+     {% if start_date == '2000-01-01' %}
+     <div class="center-text">
+         <label>Number of items sold for all time: {{ sales_count }}</label>
+         {% else %}
+         <label>Number of items sold from {{ start_date }} to {{ end_date }}: {{ sales_count }}</label>
+         {% endif %}
+        {% endif %}
+     </div>
+</form>
+
+
 {% endblock %}

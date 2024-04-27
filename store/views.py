@@ -172,7 +172,7 @@ class EmployeeDetailView(View):
         return render(request, template_name=self.template_name, context={
             'form': form,
             'pk': pk,
-            'role' : employee_role
+            'role': employee_role
         })
 
     def post(self, request, pk):
@@ -671,15 +671,19 @@ class ProductDetailView(View):
         })
 
     def post(self, request, pk):
-        if request.POST.get('action') == 'delete':
-            return self.delete_product(request, pk)
+        if 'action' in request.POST:
+            if request.POST.get('action') == 'delete':
+                return self.delete_product(request, pk)
+            elif 'start_date' in request.POST and 'end_date' in request.POST:
+                print("get count action")
+                return self.get_sales_count_form(request, pk)
         else:
+            print("get update action")
             return self.update_product(request, pk)
 
     def delete_product(self, request, pk):
         try:
             delete = 'DELETE FROM store_product WHERE id_product = %s'
-
             with connection.cursor() as cursor:
                 cursor.execute(delete, [pk])
 
@@ -713,6 +717,57 @@ class ProductDetailView(View):
                 'form': form,
                 'pk': pk
             })
+
+    def get_sales_count(self, start_date, end_date, product_id):
+        query = '''
+            SELECT SUM(sa.product_number) 
+            FROM store_product s JOIN store_store_product ss
+            ON s.id_product = ss.id_product_id JOIN store_sale sa 
+            ON sa."UPC_id" = ss."UPC" JOIN store_check c 
+            ON c.check_number = sa.check_number_id
+            WHERE s.id_product = %s AND c.print_date BETWEEN %s AND %s
+        '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [product_id, start_date, end_date])
+            sales_count = cursor.fetchone()[0]
+        return sales_count
+
+    def get_sales_count_form(self, request, pk):
+        query = '''
+                   SELECT * FROM store_product WHERE id_product = %s
+                   '''
+        with connection.cursor() as cursor:
+            cursor.execute(query, [pk])
+            product = cursor.fetchall()
+
+        product_name, characteristics, category = product[0][1], product[0][2], product[0][3]
+        if request.method == 'POST':
+            start_date = request.POST.get('start_date') or '2000-01-01'
+            end_date = request.POST.get('end_date') or '9999-12-31'
+            sales_count = self.get_sales_count(start_date, end_date, pk)
+            form = ProductDetailForm(initial={
+                'product_name': product_name,
+                'characteristics': characteristics,
+                'category': category,
+                'start_date': start_date,
+                'end_date': end_date,
+            })
+            return render(request, template_name=self.template_name, context={
+                'form': form,
+                'pk': pk,
+                'sales_count': sales_count,
+                'start_date': start_date,
+                'end_date': end_date,
+            })
+        form = ProductDetailForm(initial={
+            'product_name': product_name,
+            'characteristics': characteristics,
+            'category': category
+        })
+        return render(request, template_name=self.template_name, context={
+            'form': form,
+            'pk': pk,
+        })
 
 
 @method_decorator(login_required, name='dispatch')

@@ -289,6 +289,8 @@ class StatsDateOptions(forms.Form):
         widget=forms.DateInput(attrs={'type': 'date'}),
         required=False
     )
+    category_name = forms.ModelChoiceField(queryset=Category.objects.all(),
+                                           required=False)
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     old_password = forms.CharField(
